@@ -153,20 +153,20 @@
     <label for="embarcacion">Embarcacion</label>
     <select id="embarcacion" required>
       <option value="" disabled selected>Selecciona barco...</option>
-      <option value="Alisio 45">Alisio 45</option>
-      <option value="Hope">Hope / Hope 47</option>
-      <option value="Mistral">Mistral</option>
-      <option value="Valhalla 51">Valhalla 51</option>
-      <option value="Chicote">Chicote</option>
-      <option value="Cahua">Cahua</option>
+      <option value="Alisio 45">🚤 Alisio 45</option>
+      <option value="Hope">🚤 Hope / Hope 47</option>
+      <option value="Mistral">⛵ Mistral</option>
+      <option value="Valhalla 51">🚤 Valhalla 51</option>
+      <option value="Chicote">🚤 Chicote</option>
+      <option value="Cahua">⚓ Cahua</option>
     </select>
 
     <label for="estado">Estado / Actividad</label>
     <select id="estado" required>
-      <option value="En transito">En transito / Rumbo a</option>
-      <option value="Arribado">Arribado / En destino</option>
-      <option value="En amarre">En amarre</option>
-      <option value="Panoramico">En panoramico</option>
+      <option value="En transito">📍 En transito / Rumbo a</option>
+      <option value="Arribado">⚓ Arribado / En destino</option>
+      <option value="En amarre">🟡 En amarre</option>
+      <option value="Panoramico">📸 En panoramico</option>
     </select>
 
     <div class="grid-2">
@@ -192,7 +192,7 @@
 </div>
 
 <script>
-  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbypxUgCCiT1CRz5EwJDRH-A1YG1xBJDhB0DszlMIEcrVpbYH-r-91vQZqf8vJiw6Adp/exec";
+  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwWCNEpDzDXlVzqAg6T5ORZAW2FrFoTZMYWM37vZZW7_dRc2l6ciRcMQRp19TaXOJ8P/exec";
 
   function enviarReporte() {
     const barco = document.getElementById('embarcacion').value;
