@@ -112,16 +112,16 @@
 
     #status {
       margin-top: 16px;
-      padding: 12px;
-      border-radius: 8px;
-      font-weight: 700;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 800;
       text-align: center;
-      font-size: 0.95rem;
+      font-size: 1rem;
       display: none;
     }
 
     .status-info { background: #e0f2fe; color: #0369a1; display: block !important; }
-    .status-success { background: #dcfce7; color: #15803d; display: block !important; }
+    .status-success { background: #dcfce7; color: #15803d; display: block !important; border: 2px solid #16a34a; }
     .status-error { background: #fee2e2; color: #b91c1c; display: block !important; }
   </style>
 </head>
@@ -165,7 +165,7 @@
     <input type="text" id="notas" placeholder="Ej: Frente a Sofitel / Rumbo a Cholón">
 
     <button type="button" class="btn-submit" onclick="enviarReporte()">
-      <span>ENVIAR UBICACIÓN GPS</span>
+      <span>ENVIAR REPORTE</span>
     </button>
   </form>
 
@@ -176,55 +176,71 @@
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbypxUgCCiT1CRz5EwJDRH-A1YG1xBJDhB0DszlMIEcrVpbYH-r-91vQZqf8vJiw6Adp/exec";
 
   function enviarReporte() {
-    const statusDiv = document.getElementById('status');
     const barco = document.getElementById('embarcacion').value;
 
     if (!barco) {
-      showStatus("Por favor selecciona una embarcación.", "error");
+      showStatus("⚠️ Selecciona una embarcación.", "error");
       return;
     }
 
     showStatus("📡 Capturando GPS...", "info");
 
     if (!navigator.geolocation) {
-      showStatus("Tu navegador no soporta GPS.", "error");
+      // Si el navegador no soporta GPS, envía sin coordenadas
+      enviarAWebhook("Sin soporte GPS");
       return;
     }
+
+    const gpsOptions = {
+      enableHighAccuracy: false, // Cambiado a false para obtener posición más rápido en celular
+      timeout: 20000,             // Aumentado a 20 segundos
+      maximumAge: 60000           // Acepta coordenadas leídas en el último minuto
+    };
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
-        showStatus("📤 Enviando datos a base...", "info");
-
-        const payload = {
-          embarcacion: barco,
-          estado: document.getElementById('estado').value,
-          pasajeros: document.getElementById('pasajeros').value || 0,
-          equipaje: document.getElementById('equipaje').value || 0,
-          coordenadas: coords,
-          notas: document.getElementById('notas').value
-        };
-
-        fetch(WEBHOOK_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        })
-        .then(() => {
-          if (navigator.vibrate) navigator.vibrate(200);
-          showStatus("✅ ¡Reporte guardado correctamente!", "success");
-          document.getElementById('fleetForm').reset();
-        })
-        .catch(() => {
-          showStatus("❌ Error de red al enviar.", "error");
-        });
+        enviarAWebhook(coords);
       },
       (error) => {
-        showStatus("⚠️ Activa el GPS de tu celular.", "error");
+        // En caso de error o tiempo agotado de GPS, envía con aviso en coordenadas
+        let msgError = "GPS no disponible";
+        if (error.code === 1) msgError = "Permiso GPS denegado";
+        if (error.code === 2) msgError = "Sin señal GPS";
+        if (error.code === 3) msgError = "Tiempo de GPS agotado";
+        
+        enviarAWebhook(msgError);
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      gpsOptions
     );
+  }
+
+  function enviarAWebhook(coordenadasData) {
+    showStatus("📤 Guardando reporte...", "info");
+
+    const payload = {
+      embarcacion: document.getElementById('embarcacion').value,
+      estado: document.getElementById('estado').value,
+      pasajeros: document.getElementById('pasajeros').value || 0,
+      equipaje: document.getElementById('equipaje').value || 0,
+      coordenadas: coordenadasData,
+      notas: document.getElementById('notas').value
+    };
+
+    fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(() => {
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Doble vibración corta
+      showStatus("🎉 COMPLETADO CON ÉXITO", "success");
+      document.getElementById('fleetForm').reset();
+    })
+    .catch(() => {
+      showStatus("❌ Error de red. Intenta nuevamente.", "error");
+    });
   }
 
   function showStatus(msg, type) {
@@ -236,6 +252,5 @@
 
 </body>
 </html>
-
 </body>
 </html>
