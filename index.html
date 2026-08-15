@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Control Flota Náutica</title>
+  <title>Control Flota Náutica - Cartagena</title>
   
   <!-- Estilos Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -41,7 +41,7 @@
     .nav-tabs {
       display: flex;
       width: 100%;
-      max-width: 420px;
+      max-width: 900px;
       margin-bottom: 12px;
       background: var(--card);
       border-radius: 12px;
@@ -68,7 +68,7 @@
 
     .container {
       width: 100%;
-      max-width: 420px;
+      max-width: 900px;
       background: var(--card);
       border-radius: 16px;
       padding: 20px 16px;
@@ -138,19 +138,90 @@
     .status-success { background: var(--success-bg); color: var(--success-text); display: block !important; border: 2px solid var(--success-text); }
     .status-error { background: var(--error-bg); color: var(--error-text); display: block !important; }
 
+    /* LAYOUT DEL DASHBOARD NÁUTICO */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
     #map {
       width: 100%;
-      height: 420px;
+      height: 480px;
       border-radius: 12px;
       border: 2px solid var(--border);
-      margin-top: 10px;
       background: #0e1726;
+    }
+
+    .fleet-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .boat-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .boat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .boat-title {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--primary);
+    }
+
+    .boat-status {
+      font-size: 0.8rem;
+      background: var(--card);
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-weight: 700;
+    }
+
+    .boat-info {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      display: flex;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .boat-notes {
+      font-size: 0.85rem;
+      font-style: italic;
+      color: var(--text);
+    }
+
+    .boat-time {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 4px;
     }
 
     .btn-refresh {
       width: 100%;
       height: 44px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       background: var(--bg);
       color: var(--text);
       border: 2px solid var(--border);
@@ -211,11 +282,17 @@
     <div id="status"></div>
   </div>
 
-  <!-- DASHBOARD MAPA NÁUTICO -->
+  <!-- DASHBOARD DIVIDIDO -->
   <div id="dashboardTab" class="tab-content">
-    <h2>Radar de Flota</h2>
+    <h2>Radar & Estado de Flota</h2>
     <button class="btn-refresh" onclick="cargarMapa()">Actualizar Posiciones</button>
-    <div id="map"></div>
+    
+    <div class="dashboard-layout">
+      <div id="map"></div>
+      <div id="fleetList" class="fleet-list">
+        <div style="text-align: center; color: #64748b; padding: 20px;">Cargando lista de barcos...</div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -227,7 +304,7 @@
 <script>
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyI0fTjyU1fMJTsnR0xc170ImOpfVBsY_2ewqcL3yIy0dHc9kZZ6FqE_FIgFc0E21_Igw/exec";
   
-  // URL CSV vinculada directamente a tu hoja "Programacion"
+  // Endpoint directo a la hoja Programacion
   const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=hoja%201";
 
   let map;
@@ -296,7 +373,7 @@
   }
 
   function initMap() {
-    map = L.map('map').setView([10.4000, -75.5300], 11); // Bahía de Cartagena
+    map = L.map('map').setView([10.4000, -75.5300], 11);
     
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
@@ -313,22 +390,55 @@
       skipEmptyLines: true,
       complete: function(results) {
         markersGroup.clearLayers();
-        
+        const fleetListDiv = document.getElementById('fleetList');
+        fleetListDiv.innerHTML = '';
+
         const ultimosReportes = {};
-        
-        // Filtra y guarda solo el último reporte ingresado de cada bote
+
+        // Procesa la hoja de datos conservando únicamente la última fila por barco
         results.data.forEach(row => {
-          const barcoKey = Object.keys(row).find(k => k.toLowerCase().includes('embarcacion'));
-          const barco = row[barcoKey];
-          if (barco && barco.trim() !== '') {
-            ultimosReportes[barco.trim()] = row;
+          const keys = Object.keys(row);
+          const barcoKey = keys.find(k => k.toLowerCase().includes('embarcacion'));
+          if (barcoKey && row[barcoKey] && row[barcoKey].trim() !== '') {
+            ultimosReportes[row[barcoKey].trim()] = row;
           }
         });
 
-        Object.values(ultimosReportes).forEach(item => {
-          const coordKey = Object.keys(item).find(k => k.toLowerCase().includes('coordenadas'));
-          const rawCoords = item[coordKey];
-          
+        const listItems = Object.values(ultimosReportes);
+
+        if (listItems.length === 0) {
+          fleetListDiv.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">No hay reportes registrados.</div>';
+          return;
+        }
+
+        listItems.forEach(item => {
+          const keys = Object.keys(item);
+          const barco = item[keys.find(k => k.toLowerCase().includes('embarcacion'))] || 'Sin Nombre';
+          const estado = item[keys.find(k => k.toLowerCase().includes('estado'))] || 'N/A';
+          const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
+          const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
+          const notas = item[keys.find(k => k.toLowerCase().includes('notas'))] || 'Sin observaciones';
+          const fecha = item[keys.find(k => k.toLowerCase().includes('fecha'))] || '';
+          const rawCoords = item[keys.find(k => k.toLowerCase().includes('coordenadas'))] || '';
+
+          // 1. Crear Tarjeta Lateral
+          const card = document.createElement('div');
+          card.className = 'boat-card';
+          card.innerHTML = `
+            <div class="boat-header">
+              <span class="boat-title">${barco}</span>
+              <span class="boat-status">${estado}</span>
+            </div>
+            <div class="boat-info">
+              <span><b>PAX:</b> ${pax}</span>
+              <span><b>Equipaje:</b> ${equip}</span>
+            </div>
+            <div class="boat-notes">${notas}</div>
+            <div class="boat-time">${fecha}</div>
+          `;
+          fleetListDiv.appendChild(card);
+
+          // 2. Crear Marcador en el Mapa si tiene Coordenadas válidas
           if (rawCoords && rawCoords.includes(',')) {
             const parts = rawCoords.split(',');
             const lat = parseFloat(parts[0].trim());
@@ -342,19 +452,13 @@
                 radius: 10
               });
 
-              const estadoKey = Object.keys(item).find(k => k.toLowerCase().includes('estado')) || '';
-              const paxKey = Object.keys(item).find(k => k.toLowerCase().includes('pasajeros')) || '';
-              const equipKey = Object.keys(item).find(k => k.toLowerCase().includes('equipaje')) || '';
-              const notasKey = Object.keys(item).find(k => k.toLowerCase().includes('notas')) || '';
-              const fechaKey = Object.keys(item).find(k => k.toLowerCase().includes('fecha')) || '';
-
               const popupText = `
                 <div style="color: #0f172a; font-family: sans-serif; padding: 4px;">
-                  <b style="font-size: 1.1rem; color: #0284c7;">${item[Object.keys(item).find(k => k.toLowerCase().includes('embarcacion'))]}</b><br>
-                  <b>Estado:</b> ${item[estadoKey] || 'N/A'}<br>
-                  <b>PAX:</b> ${item[paxKey] || 0} | <b>Equipaje:</b> ${item[equipKey] || 0}<br>
-                  <b>Notas:</b> ${item[notasKey] || 'Sin notas'}<br>
-                  <small style="color: #64748b;">${item[fechaKey] || ''}</small>
+                  <b style="font-size: 1.1rem; color: #0284c7;">${barco}</b><br>
+                  <b>Estado:</b> ${estado}<br>
+                  <b>PAX:</b> ${pax} | <b>Equipaje:</b> ${equip}<br>
+                  <b>Notas:</b> ${notas}<br>
+                  <small style="color: #64748b;">${fecha}</small>
                 </div>
               `;
 
@@ -363,9 +467,16 @@
             }
           }
         });
+      },
+      error: function() {
+        document.getElementById('fleetList').innerHTML = '<div style="color: #fca5a5; padding: 10px;">Error leyendo Google Sheets. Revisa el acceso publico.</div>';
       }
     });
   }
+</script>
+
+</body>
+</html>
 </script>
 
 </body>
