@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Reporte de Flota</title>
+  <title>Control de Flota - Cartagena</title>
+  
+  <!-- Estilos del Mapa Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
   <style>
     :root {
       --bg: #f8fafc;
@@ -37,11 +41,7 @@
       }
     }
 
-    * {
-      box-sizing: border-box;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -50,9 +50,37 @@
       margin: 0;
       padding: 12px;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      flex-direction: column;
+      align-items: center;
       min-height: 100vh;
+    }
+
+    .nav-tabs {
+      display: flex;
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 12px;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
     }
 
     .container {
@@ -63,6 +91,9 @@
       padding: 20px 16px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
     h2 {
       margin: 0 0 16px 0;
@@ -80,7 +111,6 @@
       margin-bottom: 6px;
       font-size: 0.85rem;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
     }
 
     select, input {
@@ -94,18 +124,9 @@
       color: var(--text);
       outline: none;
       -webkit-appearance: none;
-      appearance: none;
     }
 
-    select:focus, input:focus {
-      border-color: var(--primary);
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
     .btn-submit {
       width: 100%;
@@ -117,16 +138,7 @@
       border-radius: 14px;
       font-size: 1.1rem;
       font-weight: 800;
-      letter-spacing: 0.5px;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn-submit:active {
-      background-color: var(--primary-active);
-      transform: scale(0.98);
     }
 
     #status {
@@ -142,77 +154,127 @@
     .status-info { background: var(--info-bg); color: var(--info-text); display: block !important; }
     .status-success { background: var(--success-bg); color: var(--success-text); display: block !important; border: 2px solid var(--success-text); }
     .status-error { background: var(--error-bg); color: var(--error-text); display: block !important; }
+
+    /* Estilos del Mapa */
+    #map {
+      width: 100%;
+      height: 380px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      margin-top: 10px;
+    }
+
+    .btn-refresh {
+      width: 100%;
+      height: 44px;
+      margin-bottom: 10px;
+      background: var(--bg);
+      color: var(--text);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>Reporte Operativo</h2>
-  
-  <form id="fleetForm">
-    <label for="embarcacion">Embarcacion</label>
-    <select id="embarcacion" required>
-      <option value="" disabled selected>Selecciona barco...</option>
-      <option value="Alisio 45">🚤 Alisio 45</option>
-      <option value="Hope">🚤 Hope / Hope 47</option>
-      <option value="Mistral">⛵ Mistral</option>
-      <option value="Valhalla 51">🚤 Valhalla 51</option>
-      <option value="Chicote">🚤 Chicote</option>
-      <option value="Cahua">⚓ Cahua</option>
-    </select>
-
-    <label for="estado">Estado / Actividad</label>
-    <select id="estado" required>
-      <option value="En transito">📍 En transito / Rumbo a</option>
-      <option value="Arribado">⚓ Arribado / En destino</option>
-      <option value="En amarre">🟡 En amarre</option>
-      <option value="Panoramico">📸 En panoramico</option>
-    </select>
-
-    <div class="grid-2">
-      <div>
-        <label for="pasajeros">PAX (Pasajeros)</label>
-        <input type="number" id="pasajeros" inputmode="numeric" pattern="[0-9]*" placeholder="0">
-      </div>
-      <div>
-        <label for="equipaje">Equipaje</label>
-        <input type="number" id="equipaje" inputmode="numeric" pattern="[0-9]*" placeholder="0">
-      </div>
-    </div>
-
-    <label for="notas">Notas / Punto de referencia</label>
-    <input type="text" id="notas" placeholder="Ej: Frente a Sofitel / Rumbo a Cholon">
-
-    <button type="button" class="btn-submit" onclick="enviarReporte()">
-      <span>ENVIAR REPORTE</span>
-    </button>
-  </form>
-
-  <div id="status"></div>
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="switchTab('reporteTab', this)">REPORTAR</button>
+  <button class="tab-btn" onclick="switchTab('dashboardTab', this)">DASHBOARD</button>
 </div>
+
+<div class="container">
+  
+  <!-- PESTAÑA 1: FORMULARIO DE REPORTE -->
+  <div id="reporteTab" class="tab-content active">
+    <h2>Reporte Operativo</h2>
+    <form id="fleetForm">
+      <label for="embarcacion">Embarcacion</label>
+      <select id="embarcacion" required>
+        <option value="" disabled selected>Selecciona barco...</option>
+        <option value="Alisio 45">Alisio 45</option>
+        <option value="Hope">Hope / Hope 47</option>
+        <option value="Mistral">Mistral</option>
+        <option value="Valhalla 51">Valhalla 51</option>
+        <option value="Chicote">Chicote</option>
+        <option value="Cahua">Cahua</option>
+      </select>
+
+      <label for="estado">Estado / Actividad</label>
+      <select id="estado" required>
+        <option value="En transito">En transito / Rumbo a</option>
+        <option value="Arribado">Arribado / En destino</option>
+        <option value="En amarre">En amarre</option>
+        <option value="Panoramico">En panoramico</option>
+      </select>
+
+      <div class="grid-2">
+        <div>
+          <label for="pasajeros">PAX</label>
+          <input type="number" id="pasajeros" inputmode="numeric" placeholder="0">
+        </div>
+        <div>
+          <label for="equipaje">Equipaje</label>
+          <input type="number" id="equipaje" inputmode="numeric" placeholder="0">
+        </div>
+      </div>
+
+      <label for="notas">Notas / Referencia</label>
+      <input type="text" id="notas" placeholder="Ej: Frente a Sofitel">
+
+      <button type="button" class="btn-submit" onclick="enviarReporte()">ENVIAR REPORTE</button>
+    </form>
+    <div id="status"></div>
+  </div>
+
+  <!-- PESTAÑA 2: MAPA Y DASHBOARD -->
+  <div id="dashboardTab" class="tab-content">
+    <h2>Ubicacion de Flota</h2>
+    <button class="btn-refresh" onclick="cargarMapa()">Actualizar Mapa</button>
+    <div id="map"></div>
+  </div>
+
+</div>
+
+<!-- Scripts de Leaflet y PapaParse para procesar CSV -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyI0fTjyU1fMJTsnR0xc170ImOpfVBsY_2ewqcL3yIy0dHc9kZZ6FqE_FIgFc0E21_Igw/exec";
+  
+  // Remplaza este enlace por la URL pública del CSV generada en el Paso 1
+  const CSV_SHEET_URL = "PEGA_AQUI_TU_ENLACE_CSV_PUBLICADO";
+
+  let map;
+  let markersGroup;
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+
+    if(tabId === 'dashboardTab') {
+      setTimeout(() => {
+        if (!map) initMap();
+        cargarMapa();
+      }, 200);
+    }
+  }
 
   function enviarReporte() {
     const barco = document.getElementById('embarcacion').value;
-
-    if (!barco) {
-      showStatus("Selecciona una embarcacion.", "error");
-      return;
-    }
+    if (!barco) { showStatus("Selecciona una embarcacion.", "error"); return; }
 
     showStatus("Obteniendo posicion...", "info");
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
-          enviarAWebhook(coords);
-        },
-        (error) => {
-          enviarAWebhook("Posicion no disponible");
-        },
+        (pos) => enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`),
+        () => enviarAWebhook("Posicion no disponible"),
         { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
       );
     } else {
@@ -220,15 +282,14 @@
     }
   }
 
-  function enviarAWebhook(coordenadasData) {
+  function enviarAWebhook(coords) {
     showStatus("Guardando reporte...", "info");
-
     const payload = {
       embarcacion: document.getElementById('embarcacion').value,
       estado: document.getElementById('estado').value,
       pasajeros: document.getElementById('pasajeros').value || 0,
       equipaje: document.getElementById('equipaje').value || 0,
-      coordenadas: coordenadasData,
+      coordenadas: coords,
       notas: document.getElementById('notas').value
     };
 
@@ -239,19 +300,55 @@
       body: JSON.stringify(payload)
     })
     .then(() => {
-      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       showStatus("COMPLETADO CON EXITO", "success");
       document.getElementById('fleetForm').reset();
     })
-    .catch(() => {
-      showStatus("Error de red. Intenta nuevamente.", "error");
-    });
+    .catch(() => showStatus("Error de red.", "error"));
   }
 
   function showStatus(msg, type) {
     const statusDiv = document.getElementById('status');
     statusDiv.innerText = msg;
     statusDiv.className = `status-${type}`;
+  }
+
+  // Lógica del Mapa en Vivo
+  function initMap() {
+    map = L.map('map').setView([10.4000, -75.5300], 12); // Centro en Cartagena
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    markersGroup = L.layerGroup().addTo(map);
+  }
+
+  function cargarMapa() {
+    if(!CSV_SHEET_URL || CSV_SHEET_URL.includes("PEGA_AQUI")) return;
+
+    Papa.parse(CSV_SHEET_URL, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        markersGroup.clearLayers();
+        results.data.forEach(row => {
+          if(row.Coordenadas && row.Coordenadas.includes(',')) {
+            const parts = row.Coordenadas.split(',');
+            const lat = parseFloat(parts[0]);
+            const lng = parseFloat(parts[1]);
+
+            if(!isNaN(lat) && !isNaN(lng)) {
+              const popupText = `
+                <b>${row.Embarcacion}</b><br>
+                Estado: ${row.Estado}<br>
+                PAX: ${row.Pasajeros} | Equipaje: ${row.Equipaje}<br>
+                Notas: ${row.Notas}<br>
+                <small>${row.Fecha_Hora}</small>
+              `;
+              L.marker([lat, lng]).addTo(markersGroup).bindPopup(popupText);
+            }
+          }
+        });
+      }
+    });
   }
 </script>
 
