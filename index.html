@@ -138,7 +138,7 @@
     .status-success { background: var(--success-bg); color: var(--success-text); display: block !important; border: 2px solid var(--success-text); }
     .status-error { background: var(--error-bg); color: var(--error-text); display: block !important; }
 
-    /* Mapa Náutico */
+    /* Mapa Náutico Dark */
     #map {
       width: 100%;
       height: 420px;
@@ -170,7 +170,7 @@
 
 <div class="container">
   
-  <!-- FORMULARIO -->
+  <!-- FORMULARIO DE REPORTE -->
   <div id="reporteTab" class="tab-content active">
     <h2>Reporte Operativo</h2>
     <form id="fleetForm">
@@ -212,7 +212,7 @@
     <div id="status"></div>
   </div>
 
-  <!-- DASHBOARD NÁUTICO -->
+  <!-- DASHBOARD MAPA NÁUTICO -->
   <div id="dashboardTab" class="tab-content">
     <h2>Radar de Flota</h2>
     <button class="btn-refresh" onclick="cargarMapa()">Actualizar Posiciones</button>
@@ -221,10 +221,15 @@
 
 </div>
 
+<!-- Librerías JS: Leaflet (Mapa) y PapaParse (Procesador CSV) -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyI0fTjyU1fMJTsnR0xc170ImOpfVBsY_2ewqcL3yIy0dHc9kZZ6FqE_FIgFc0E21_Igw/exec";
+  
+  // PEGA AQUÍ TU ENLACE CSV PUBLICADO EN EL PASO 1
+  const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1v.../pub?gid=0&single=true&output=csv";
 
   let map;
   let markersGroup;
@@ -291,11 +296,11 @@
     statusDiv.className = `status-${type}`;
   }
 
-  // Mapa con Capa Oscura / Náutica Minimalista
+  // Inicializar Mapa Náutico
   function initMap() {
     map = L.map('map').setView([10.4000, -75.5300], 11); // Bahía de Cartagena e Islas
     
-    // Capa base CartoDB Dark Matter (Estilo Radar Náutico, elimina información terrestre)
+    // Capa base estilo radar náutico oscuro
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       attribution: '&copy; CARTO'
@@ -305,43 +310,61 @@
   }
 
   function cargarMapa() {
-    // Consulta directa a Apps Script en formato JSON sin pasar por caché de Sheets
-    fetch(WEBHOOK_URL + "?action=read")
-      .then(response => response.json())
-      .then(data => {
+    if (!CSV_SHEET_URL || CSV_SHEET_URL.includes("2PACX-1v...")) {
+      console.error("Falta colocar la URL del CSV publicado.");
+      return;
+    }
+
+    Papa.parse(CSV_SHEET_URL + "&t=" + new Date().getTime(), {
+      download: true,
+      header: true,
+      complete: function(results) {
         markersGroup.clearLayers();
-        data.forEach(item => {
-          if (item.coordenadas && item.coordenadas.includes(',')) {
-            const parts = item.coordenadas.split(',');
+        
+        // Filtro para mantener ÚNICAMENTE el último registro por cada barco
+        const ultimosReportes = {};
+        
+        results.data.forEach(row => {
+          const barco = row.Embarcacion || row.embarcacion;
+          if (barco) {
+            ultimosReportes[barco] = row; // Al recorrer en orden, el último sobreescribe a los anteriores
+          }
+        });
+
+        // Dibujar solo la última posición en el mapa
+        Object.values(ultimosReportes).forEach(item => {
+          const coordsStr = item.Coordenadas || item.coordenadas;
+          if (coordsStr && coordsStr.includes(',')) {
+            const parts = coordsStr.split(',');
             const lat = parseFloat(parts[0]);
             const lng = parseFloat(parts[1]);
 
             if (!isNaN(lat) && !isNaN(lng)) {
-              // Marcador circular estilo radar
+              // Marcador en forma de punto de radar brillante
               const circle = L.circleMarker([lat, lng], {
                 color: '#38bdf8',
                 fillColor: '#0284c7',
-                fillOpacity: 0.8,
-                radius: 8
+                fillOpacity: 0.9,
+                radius: 9
               });
 
               const popupText = `
                 <div style="color: #0f172a; font-family: sans-serif;">
-                  <b style="font-size: 1.1rem;">${item.embarcacion}</b><br>
-                  <b>Estado:</b> ${item.estado}<br>
-                  <b>PAX:</b> ${item.pasajeros} | <b>Equipaje:</b> ${item.equipaje}<br>
-                  <b>Notas:</b> ${item.notas}<br>
-                  <small style="color: #64748b;">${item.fecha}</small>
+                  <b style="font-size: 1.1rem;">${item.Embarcacion || item.embarcacion}</b><br>
+                  <b>Estado:</b> ${item.Estado || item.estado}<br>
+                  <b>PAX:</b> ${item.Pasajeros || item.pasajeros} | <b>Equipaje:</b> ${item.Equipaje || item.equipaje}<br>
+                  <b>Notas:</b> ${item.Notas || item.notas}<br>
+                  <small style="color: #64748b;">${item.Fecha_Hora || item.fecha}</small>
                 </div>
               `;
-              
+
               circle.bindPopup(popupText);
               markersGroup.addLayer(circle);
             }
           }
         });
-      })
-      .catch(err => console.error("Error cargando mapa:", err));
+      }
+    });
   }
 </script>
 
