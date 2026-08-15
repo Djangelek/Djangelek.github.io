@@ -119,9 +119,9 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-top: 12px;
+      margin-top: 10px;
       background: var(--bg);
-      padding: 10px 14px;
+      padding: 12px 14px;
       border-radius: 10px;
       border: 1px solid var(--border);
       cursor: pointer;
@@ -302,11 +302,6 @@
         <option value="📸 Panoramico">📸 Panoramico</option>
       </select>
 
-      <label class="checkbox-container">
-        <input type="checkbox" id="repetirPax" onchange="togglePaxEquipaje(this.checked)">
-        <span>Usar PAX y equipaje del reporte anterior</span>
-      </label>
-
       <div class="grid-2">
         <div>
           <label for="pasajeros">PAX</label>
@@ -317,6 +312,11 @@
           <input type="number" id="equipaje" inputmode="numeric" placeholder="0">
         </div>
       </div>
+
+      <label class="checkbox-container">
+        <input type="checkbox" id="repetirPax" onchange="togglePaxEquipaje(this.checked)">
+        <span>Usar PAX y equipaje del reporte anterior</span>
+      </label>
 
       <label for="notas">Lugar / Referencia</label>
       <input type="text" id="notas" placeholder="Ej: Rumbo a Isla Grande / Cholon">
@@ -439,7 +439,7 @@
       document.getElementById('fleetForm').reset();
       document.getElementById('repetirPax').checked = false;
       togglePaxEquipaje(false);
-      cargarMapa(); // Actualiza caché local
+      cargarMapa();
     })
     .catch(() => showStatus("Error de red.", "error"));
   }
@@ -492,7 +492,6 @@
 
         const listItems = Object.values(ultimosReportesGlobal);
 
-        // Si el usuario tenía activo el checkbox, actualiza los inputs en vivo
         cargarUltimoPaxEquipaje();
 
         if (!fleetListDiv) return;
@@ -576,7 +575,6 @@
     }
   }
 
-  // Pre-carga datos al iniciar la app
   window.onload = function() {
     cargarMapa();
   };
