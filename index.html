@@ -64,7 +64,6 @@
       font-size: 0.9rem;
     }
 
-    /* Campos de entrada optimizados para dedos */
     select, input {
       width: 100%;
       height: 52px;
@@ -88,7 +87,6 @@
       gap: 12px;
     }
 
-    /* Botón táctil principal */
     .btn-submit {
       width: 100%;
       height: 60px;
@@ -112,7 +110,6 @@
       transform: scale(0.98);
     }
 
-    /* Retroalimentación de estado */
     #status {
       margin-top: 16px;
       padding: 12px;
@@ -176,8 +173,7 @@
 </div>
 
 <script>
-  // Reemplazar por la URL generada en Apps Script
-  const WEBHOOK_URL = "URL_DE_TU_APPS_SCRIPT";
+  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbypxUgCCiT1CRz5EwJDRH-A1YG1xBJDhB0DszlMIEcrVpbYH-r-91vQZqf8vJiw6Adp/exec";
 
   function enviarReporte() {
     const statusDiv = document.getElementById('status');
@@ -216,7 +212,7 @@
           body: JSON.stringify(payload)
         })
         .then(() => {
-          if (navigator.vibrate) navigator.vibrate(200); // Vibración física al confirmar
+          if (navigator.vibrate) navigator.vibrate(200);
           showStatus("✅ ¡Reporte guardado correctamente!", "success");
           document.getElementById('fleetForm').reset();
         })
@@ -237,6 +233,9 @@
     statusDiv.className = `status-${type}`;
   }
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
