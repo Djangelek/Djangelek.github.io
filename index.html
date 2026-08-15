@@ -96,7 +96,7 @@
       text-transform: uppercase;
     }
 
-    select, input {
+    select, input[type="text"], input[type="number"] {
       width: 100%;
       height: 54px;
       padding: 0 14px;
@@ -107,6 +107,37 @@
       color: var(--text);
       outline: none;
       -webkit-appearance: none;
+    }
+
+    input:disabled {
+      opacity: 0.4;
+      background-color: #1e293b;
+      cursor: not-allowed;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      background: var(--bg);
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .checkbox-container input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .checkbox-container span {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
     }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -156,7 +187,7 @@
       height: 480px;
       border-radius: 12px;
       border: 2px solid var(--border);
-      background: #0e1726;
+      background: #0b1329;
     }
 
     .fleet-list {
@@ -253,7 +284,7 @@
     <h2>Reporte Operativo</h2>
     <form id="fleetForm">
       <label for="embarcacion">Embarcacion</label>
-      <select id="embarcacion" required>
+      <select id="embarcacion" onchange="cargarUltimoPaxEquipaje()" required>
         <option value="" disabled selected>Selecciona barco...</option>
         <option value="Alisio 45">Alisio 45</option>
         <option value="Hope">Hope / Hope 47</option>
@@ -270,6 +301,11 @@
         <option value="🟡 En amarre">🟡 En amarre</option>
         <option value="📸 Panoramico">📸 Panoramico</option>
       </select>
+
+      <label class="checkbox-container">
+        <input type="checkbox" id="repetirPax" onchange="togglePaxEquipaje(this.checked)">
+        <span>Usar PAX y equipaje del reporte anterior</span>
+      </label>
 
       <div class="grid-2">
         <div>
@@ -311,13 +347,12 @@
 
 <script>
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyI0fTjyU1fMJTsnR0xc170ImOpfVBsY_2ewqcL3yIy0dHc9kZZ6FqE_FIgFc0E21_Igw/exec";
-  
-  // Endpoint directo a la hoja Programacion
   const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=hoja%201";
 
   let map;
   let markersGroup;
   const markersMap = {};
+  let ultimosReportesGlobal = {};
 
   function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -328,9 +363,40 @@
 
     if(tabId === 'dashboardTab') {
       setTimeout(() => {
-        if (!map) initMap();
+        if (!map) {
+          initMap();
+        } else {
+          map.invalidateSize();
+        }
         cargarMapa();
-      }, 200);
+      }, 250);
+    }
+  }
+
+  function togglePaxEquipaje(checked) {
+    const inputPax = document.getElementById('pasajeros');
+    const inputEquip = document.getElementById('equipaje');
+    
+    inputPax.disabled = checked;
+    inputEquip.disabled = checked;
+
+    if (checked) {
+      cargarUltimoPaxEquipaje();
+    }
+  }
+
+  function cargarUltimoPaxEquipaje() {
+    const barco = document.getElementById('embarcacion').value;
+    const checkbox = document.getElementById('repetirPax');
+
+    if (checkbox.checked && barco && ultimosReportesGlobal[barco]) {
+      const item = ultimosReportesGlobal[barco];
+      const keys = Object.keys(item);
+      const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
+      const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
+
+      document.getElementById('pasajeros').value = pax;
+      document.getElementById('equipaje').value = equip;
     }
   }
 
@@ -371,6 +437,9 @@
     .then(() => {
       showStatus("COMPLETADO CON EXITO", "success");
       document.getElementById('fleetForm').reset();
+      document.getElementById('repetirPax').checked = false;
+      togglePaxEquipaje(false);
+      cargarMapa(); // Actualiza caché local
     })
     .catch(() => showStatus("Error de red.", "error"));
   }
@@ -382,14 +451,21 @@
   }
 
   function initMap() {
-    map = L.map('map').setView([10.4000, -75.5300], 11);
+    map = L.map('map', {
+      zoomAnimation: true,
+      fadeAnimation: true,
+      markerZoomAnimation: true
+    }).setView([10.4000, -75.5300], 11);
     
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
+      subdomains: 'abcd',
       attribution: '&copy; CARTO'
     }).addTo(map);
 
     markersGroup = L.layerGroup().addTo(map);
+
+    setTimeout(() => map.invalidateSize(), 300);
   }
 
   function cargarMapa() {
@@ -398,24 +474,28 @@
       header: true,
       skipEmptyLines: true,
       complete: function(results) {
-        markersGroup.clearLayers();
+        if (markersGroup) markersGroup.clearLayers();
         for (let key in markersMap) delete markersMap[key];
 
         const fleetListDiv = document.getElementById('fleetList');
-        fleetListDiv.innerHTML = '';
+        if (fleetListDiv) fleetListDiv.innerHTML = '';
 
-        const ultimosReportes = {};
+        ultimosReportesGlobal = {};
 
-        // Procesa la hoja de datos conservando únicamente la última fila por barco
         results.data.forEach(row => {
           const keys = Object.keys(row);
           const barcoKey = keys.find(k => k.toLowerCase().includes('embarcacion'));
           if (barcoKey && row[barcoKey] && row[barcoKey].trim() !== '') {
-            ultimosReportes[row[barcoKey].trim()] = row;
+            ultimosReportesGlobal[row[barcoKey].trim()] = row;
           }
         });
 
-        const listItems = Object.values(ultimosReportes);
+        const listItems = Object.values(ultimosReportesGlobal);
+
+        // Si el usuario tenía activo el checkbox, actualiza los inputs en vivo
+        cargarUltimoPaxEquipaje();
+
+        if (!fleetListDiv) return;
 
         if (listItems.length === 0) {
           fleetListDiv.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">No hay reportes registrados.</div>';
@@ -439,13 +519,12 @@
             lng = parseFloat(parts[1].trim());
           }
 
-          // 1. Crear Marcador en el Mapa si las coordenadas son válidas
-          if (!isNaN(lat) && !isNaN(lng) && lat !== null) {
+          if (map && !isNaN(lat) && !isNaN(lng) && lat !== null) {
             const circle = L.circleMarker([lat, lng], {
-              color: '#38bdf8',
-              fillColor: '#0284c7',
+              color: '#0284c7',
+              fillColor: '#38bdf8',
               fillOpacity: 0.9,
-              radius: 10
+              radius: 9
             });
 
             const popupText = `
@@ -463,7 +542,6 @@
             markersMap[barco] = { marker: circle, lat: lat, lng: lng };
           }
 
-          // 2. Crear Tarjeta Lateral (Haz clic para ir al punto en el mapa)
           const card = document.createElement('div');
           card.className = 'boat-card';
           card.onclick = () => focusOnBoat(barco);
@@ -482,25 +560,26 @@
           `;
           fleetListDiv.appendChild(card);
         });
-      },
-      error: function() {
-        document.getElementById('fleetList').innerHTML = '<div style="color: #fca5a5; padding: 10px;">Error leyendo Google Sheets. Revisa el acceso publico.</div>';
       }
     });
   }
 
   function focusOnBoat(barco) {
-    if (markersMap[barco]) {
+    if (markersMap[barco] && map) {
       const target = markersMap[barco];
       map.flyTo([target.lat, target.lng], 14, { duration: 1.2 });
       target.marker.openPopup();
       
-      // En móviles desplaza la vista hacia el mapa arriba
       if (window.innerWidth < 768) {
         document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
       }
     }
   }
+
+  // Pre-carga datos al iniciar la app
+  window.onload = function() {
+    cargarMapa();
+  };
 </script>
 
 </body>
