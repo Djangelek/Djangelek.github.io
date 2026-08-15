@@ -174,6 +174,13 @@
       border-left: 4px solid var(--primary);
       border-radius: 10px;
       padding: 12px;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .boat-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
     }
 
     .boat-header {
@@ -198,18 +205,19 @@
       font-weight: 700;
     }
 
+    .boat-place {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
     .boat-info {
       font-size: 0.85rem;
       color: #94a3b8;
       display: flex;
-      gap: 12px;
+      gap: 14px;
       margin-bottom: 4px;
-    }
-
-    .boat-notes {
-      font-size: 0.85rem;
-      font-style: italic;
-      color: var(--text);
     }
 
     .boat-time {
@@ -257,10 +265,10 @@
 
       <label for="estado">Estado / Actividad</label>
       <select id="estado" required>
-        <option value="En transito">En transito / Rumbo a</option>
-        <option value="Arribado">Arribado / En destino</option>
-        <option value="En amarre">En amarre</option>
-        <option value="Panoramico">En panoramico</option>
+        <option value="📍 En transito">📍 En transito / Rumbo a</option>
+        <option value="⚓ Arribado">⚓ Arribado / En destino</option>
+        <option value="🟡 En amarre">🟡 En amarre</option>
+        <option value="📸 Panoramico">📸 Panoramico</option>
       </select>
 
       <div class="grid-2">
@@ -274,8 +282,8 @@
         </div>
       </div>
 
-      <label for="notas">Notas / Referencia</label>
-      <input type="text" id="notas" placeholder="Ej: Rumbo a Isla Grande">
+      <label for="notas">Lugar / Referencia</label>
+      <input type="text" id="notas" placeholder="Ej: Rumbo a Isla Grande / Cholon">
 
       <button type="button" class="btn-submit" onclick="enviarReporte()">ENVIAR REPORTE</button>
     </form>
@@ -309,6 +317,7 @@
 
   let map;
   let markersGroup;
+  const markersMap = {};
 
   function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -390,6 +399,8 @@
       skipEmptyLines: true,
       complete: function(results) {
         markersGroup.clearLayers();
+        for (let key in markersMap) delete markersMap[key];
+
         const fleetListDiv = document.getElementById('fleetList');
         fleetListDiv.innerHTML = '';
 
@@ -417,55 +428,59 @@
           const estado = item[keys.find(k => k.toLowerCase().includes('estado'))] || 'N/A';
           const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
           const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
-          const notas = item[keys.find(k => k.toLowerCase().includes('notas'))] || 'Sin observaciones';
+          const lugar = item[keys.find(k => k.toLowerCase().includes('notas'))] || 'Sin ubicación específica';
           const fecha = item[keys.find(k => k.toLowerCase().includes('fecha'))] || '';
           const rawCoords = item[keys.find(k => k.toLowerCase().includes('coordenadas'))] || '';
 
-          // 1. Crear Tarjeta Lateral
+          let lat = null, lng = null;
+          if (rawCoords && rawCoords.includes(',')) {
+            const parts = rawCoords.split(',');
+            lat = parseFloat(parts[0].trim());
+            lng = parseFloat(parts[1].trim());
+          }
+
+          // 1. Crear Marcador en el Mapa si las coordenadas son válidas
+          if (!isNaN(lat) && !isNaN(lng) && lat !== null) {
+            const circle = L.circleMarker([lat, lng], {
+              color: '#38bdf8',
+              fillColor: '#0284c7',
+              fillOpacity: 0.9,
+              radius: 10
+            });
+
+            const popupText = `
+              <div style="color: #0f172a; font-family: sans-serif; padding: 4px;">
+                <b style="font-size: 1.1rem; color: #0284c7;">${barco}</b><br>
+                <b>Estado:</b> ${estado}<br>
+                <b>Lugar:</b> ${lugar}<br>
+                <b>PAX:</b> ${pax} | <b>Equipaje:</b> ${equip}<br>
+                <small style="color: #64748b;">${fecha}</small>
+              </div>
+            `;
+
+            circle.bindPopup(popupText);
+            markersGroup.addLayer(circle);
+            markersMap[barco] = { marker: circle, lat: lat, lng: lng };
+          }
+
+          // 2. Crear Tarjeta Lateral (Haz clic para ir al punto en el mapa)
           const card = document.createElement('div');
           card.className = 'boat-card';
+          card.onclick = () => focusOnBoat(barco);
+
           card.innerHTML = `
             <div class="boat-header">
               <span class="boat-title">${barco}</span>
               <span class="boat-status">${estado}</span>
             </div>
+            <div class="boat-place">Lugar: ${lugar}</div>
             <div class="boat-info">
               <span><b>PAX:</b> ${pax}</span>
               <span><b>Equipaje:</b> ${equip}</span>
             </div>
-            <div class="boat-notes">${notas}</div>
             <div class="boat-time">${fecha}</div>
           `;
           fleetListDiv.appendChild(card);
-
-          // 2. Crear Marcador en el Mapa si tiene Coordenadas válidas
-          if (rawCoords && rawCoords.includes(',')) {
-            const parts = rawCoords.split(',');
-            const lat = parseFloat(parts[0].trim());
-            const lng = parseFloat(parts[1].trim());
-
-            if (!isNaN(lat) && !isNaN(lng)) {
-              const circle = L.circleMarker([lat, lng], {
-                color: '#38bdf8',
-                fillColor: '#0284c7',
-                fillOpacity: 0.9,
-                radius: 10
-              });
-
-              const popupText = `
-                <div style="color: #0f172a; font-family: sans-serif; padding: 4px;">
-                  <b style="font-size: 1.1rem; color: #0284c7;">${barco}</b><br>
-                  <b>Estado:</b> ${estado}<br>
-                  <b>PAX:</b> ${pax} | <b>Equipaje:</b> ${equip}<br>
-                  <b>Notas:</b> ${notas}<br>
-                  <small style="color: #64748b;">${fecha}</small>
-                </div>
-              `;
-
-              circle.bindPopup(popupText);
-              markersGroup.addLayer(circle);
-            }
-          }
         });
       },
       error: function() {
@@ -473,10 +488,19 @@
       }
     });
   }
-</script>
 
-</body>
-</html>
+  function focusOnBoat(barco) {
+    if (markersMap[barco]) {
+      const target = markersMap[barco];
+      map.flyTo([target.lat, target.lng], 14, { duration: 1.2 });
+      target.marker.openPopup();
+      
+      // En móviles desplaza la vista hacia el mapa arriba
+      if (window.innerWidth < 768) {
+        document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }
 </script>
 
 </body>
