@@ -138,7 +138,6 @@
     .status-success { background: var(--success-bg); color: var(--success-text); display: block !important; border: 2px solid var(--success-text); }
     .status-error { background: var(--error-bg); color: var(--error-text); display: block !important; }
 
-    /* Mapa Náutico Dark */
     #map {
       width: 100%;
       height: 420px;
@@ -221,15 +220,15 @@
 
 </div>
 
-<!-- Librerías JS: Leaflet (Mapa) y PapaParse (Procesador CSV) -->
+<!-- Librerías JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyI0fTjyU1fMJTsnR0xc170ImOpfVBsY_2ewqcL3yIy0dHc9kZZ6FqE_FIgFc0E21_Igw/exec";
   
-  // PEGA AQUÍ TU ENLACE CSV PUBLICADO EN EL PASO 1
-  const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1v.../pub?gid=0&single=true&output=csv";
+  // URL CSV vinculada directamente a tu hoja "Programacion"
+  const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=hoja%201";
 
   let map;
   let markersGroup;
@@ -296,11 +295,9 @@
     statusDiv.className = `status-${type}`;
   }
 
-  // Inicializar Mapa Náutico
   function initMap() {
-    map = L.map('map').setView([10.4000, -75.5300], 11); // Bahía de Cartagena e Islas
+    map = L.map('map').setView([10.4000, -75.5300], 11); // Bahía de Cartagena
     
-    // Capa base estilo radar náutico oscuro
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       attribution: '&copy; CARTO'
@@ -310,51 +307,54 @@
   }
 
   function cargarMapa() {
-    if (!CSV_SHEET_URL || CSV_SHEET_URL.includes("2PACX-1v...")) {
-      console.error("Falta colocar la URL del CSV publicado.");
-      return;
-    }
-
     Papa.parse(CSV_SHEET_URL + "&t=" + new Date().getTime(), {
       download: true,
       header: true,
+      skipEmptyLines: true,
       complete: function(results) {
         markersGroup.clearLayers();
         
-        // Filtro para mantener ÚNICAMENTE el último registro por cada barco
         const ultimosReportes = {};
         
+        // Filtra y guarda solo el último reporte ingresado de cada bote
         results.data.forEach(row => {
-          const barco = row.Embarcacion || row.embarcacion;
-          if (barco) {
-            ultimosReportes[barco] = row; // Al recorrer en orden, el último sobreescribe a los anteriores
+          const barcoKey = Object.keys(row).find(k => k.toLowerCase().includes('embarcacion'));
+          const barco = row[barcoKey];
+          if (barco && barco.trim() !== '') {
+            ultimosReportes[barco.trim()] = row;
           }
         });
 
-        // Dibujar solo la última posición en el mapa
         Object.values(ultimosReportes).forEach(item => {
-          const coordsStr = item.Coordenadas || item.coordenadas;
-          if (coordsStr && coordsStr.includes(',')) {
-            const parts = coordsStr.split(',');
-            const lat = parseFloat(parts[0]);
-            const lng = parseFloat(parts[1]);
+          const coordKey = Object.keys(item).find(k => k.toLowerCase().includes('coordenadas'));
+          const rawCoords = item[coordKey];
+          
+          if (rawCoords && rawCoords.includes(',')) {
+            const parts = rawCoords.split(',');
+            const lat = parseFloat(parts[0].trim());
+            const lng = parseFloat(parts[1].trim());
 
             if (!isNaN(lat) && !isNaN(lng)) {
-              // Marcador en forma de punto de radar brillante
               const circle = L.circleMarker([lat, lng], {
                 color: '#38bdf8',
                 fillColor: '#0284c7',
                 fillOpacity: 0.9,
-                radius: 9
+                radius: 10
               });
 
+              const estadoKey = Object.keys(item).find(k => k.toLowerCase().includes('estado')) || '';
+              const paxKey = Object.keys(item).find(k => k.toLowerCase().includes('pasajeros')) || '';
+              const equipKey = Object.keys(item).find(k => k.toLowerCase().includes('equipaje')) || '';
+              const notasKey = Object.keys(item).find(k => k.toLowerCase().includes('notas')) || '';
+              const fechaKey = Object.keys(item).find(k => k.toLowerCase().includes('fecha')) || '';
+
               const popupText = `
-                <div style="color: #0f172a; font-family: sans-serif;">
-                  <b style="font-size: 1.1rem;">${item.Embarcacion || item.embarcacion}</b><br>
-                  <b>Estado:</b> ${item.Estado || item.estado}<br>
-                  <b>PAX:</b> ${item.Pasajeros || item.pasajeros} | <b>Equipaje:</b> ${item.Equipaje || item.equipaje}<br>
-                  <b>Notas:</b> ${item.Notas || item.notas}<br>
-                  <small style="color: #64748b;">${item.Fecha_Hora || item.fecha}</small>
+                <div style="color: #0f172a; font-family: sans-serif; padding: 4px;">
+                  <b style="font-size: 1.1rem; color: #0284c7;">${item[Object.keys(item).find(k => k.toLowerCase().includes('embarcacion'))]}</b><br>
+                  <b>Estado:</b> ${item[estadoKey] || 'N/A'}<br>
+                  <b>PAX:</b> ${item[paxKey] || 0} | <b>Equipaje:</b> ${item[equipKey] || 0}<br>
+                  <b>Notas:</b> ${item[notasKey] || 'Sin notas'}<br>
+                  <small style="color: #64748b;">${item[fechaKey] || ''}</small>
                 </div>
               `;
 
