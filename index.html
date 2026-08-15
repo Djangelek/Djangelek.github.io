@@ -1,177 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Reporte de Flota</title>
-  <style>
-    :root {
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --text: #0f172a;
-      --border: #cbd5e1;
-      --primary: #0284c7;
-      --primary-active: #0369a1;
-      --success: #16a34a;
-      --error: #dc2626;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0f172a;
-        --card: #1e293b;
-        --text: #f8fafc;
-        --border: #334155;
-        --primary: #38bdf8;
-        --primary-active: #0284c7;
-      }
-    }
-
-    * { box-sizing: border-box; touch-action: manipulation; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 16px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 440px;
-      background: var(--card);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-
-    h2 {
-      margin: 0 0 16px 0;
-      font-size: 1.25rem;
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    label {
-      display: block;
-      font-weight: 700;
-      margin-top: 14px;
-      margin-bottom: 6px;
-      font-size: 0.9rem;
-    }
-
-    select, input {
-      width: 100%;
-      height: 52px;
-      padding: 0 14px;
-      font-size: 1.1rem;
-      border-radius: 10px;
-      border: 2px solid var(--border);
-      background-color: var(--bg);
-      color: var(--text);
-      outline: none;
-      -webkit-appearance: none;
-    }
-
-    select:focus, input:focus {
-      border-color: var(--primary);
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .btn-submit {
-      width: 100%;
-      height: 60px;
-      margin-top: 24px;
-      background-color: var(--primary);
-      color: #ffffff;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn-submit:active {
-      background-color: var(--primary-active);
-      transform: scale(0.98);
-    }
-
-    #status {
-      margin-top: 16px;
-      padding: 14px;
-      border-radius: 10px;
-      font-weight: 800;
-      text-align: center;
-      font-size: 1rem;
-      display: none;
-    }
-
-    .status-info { background: #e0f2fe; color: #0369a1; display: block !important; }
-    .status-success { background: #dcfce7; color: #15803d; display: block !important; border: 2px solid #16a34a; }
-    .status-error { background: #fee2e2; color: #b91c1c; display: block !important; }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <h2>🚤 Reporte Operativo</h2>
-  
-  <form id="fleetForm">
-    <label for="embarcacion">Embarcación</label>
-    <select id="embarcacion" required>
-      <option value="" disabled selected>Selecciona barco...</option>
-      <option value="Alisio 45">Alisio 45</option>
-      <option value="Hope">Hope / Hope 47</option>
-      <option value="Mistral">Mistral</option>
-      <option value="Valhalla 51">Valhalla 51</option>
-      <option value="Chicote">Chicote</option>
-      <option value="Cahua">Cahua</option>
-    </select>
-
-    <label for="estado">Estado / Actividad</label>
-    <select id="estado" required>
-      <option value="En tránsito">📍 En tránsito / Rumbo a</option>
-      <option value="Arribado">⚓ Arribado / En destino</option>
-      <option value="En amarre">🟡 En amarre</option>
-      <option value="Panorámico">📸 En panorámico</option>
-    </select>
-
-    <div class="grid-2">
-      <div>
-        <label for="pasajeros">PAX (Pasajeros)</label>
-        <input type="number" id="pasajeros" inputmode="numeric" placeholder="0">
-      </div>
-      <div>
-        <label for="equipaje">Equipaje</label>
-        <input type="number" id="equipaje" inputmode="numeric" placeholder="0">
-      </div>
-    </div>
-
-    <label for="notas">Notas / Punto de referencia</label>
-    <input type="text" id="notas" placeholder="Ej: Frente a Sofitel / Rumbo a Cholón">
-
-    <button type="button" class="btn-submit" onclick="enviarReporte()">
-      <span>ENVIAR REPORTE</span>
-    </button>
-  </form>
-
-  <div id="status"></div>
-</div>
-
 <script>
   const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbypxUgCCiT1CRz5EwJDRH-A1YG1xBJDhB0DszlMIEcrVpbYH-r-91vQZqf8vJiw6Adp/exec";
 
@@ -183,36 +9,25 @@
       return;
     }
 
-    showStatus("📡 Capturando GPS...", "info");
+    showStatus("📡 Obteniendo posición...", "info");
 
-    if (!navigator.geolocation) {
-      // Si el navegador no soporta GPS, envía sin coordenadas
-      enviarAWebhook("Sin soporte GPS");
-      return;
+    // Intenta usar la API de geolocalización
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
+          enviarAWebhook(coords);
+        },
+        (error) => {
+          // Si estás en PC o el GPS falla, asigna un texto descriptivo o coords aproximadas
+          console.warn("GPS no disponible:", error.message);
+          enviarAWebhook("Posición PC / Sin GPS físico");
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+      );
+    } else {
+      enviarAWebhook("Navegador sin soporte de geolocalización");
     }
-
-    const gpsOptions = {
-      enableHighAccuracy: false, // Cambiado a false para obtener posición más rápido en celular
-      timeout: 20000,             // Aumentado a 20 segundos
-      maximumAge: 60000           // Acepta coordenadas leídas en el último minuto
-    };
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = `${position.coords.latitude}, ${position.coords.longitude}`;
-        enviarAWebhook(coords);
-      },
-      (error) => {
-        // En caso de error o tiempo agotado de GPS, envía con aviso en coordenadas
-        let msgError = "GPS no disponible";
-        if (error.code === 1) msgError = "Permiso GPS denegado";
-        if (error.code === 2) msgError = "Sin señal GPS";
-        if (error.code === 3) msgError = "Tiempo de GPS agotado";
-        
-        enviarAWebhook(msgError);
-      },
-      gpsOptions
-    );
   }
 
   function enviarAWebhook(coordenadasData) {
@@ -234,7 +49,7 @@
       body: JSON.stringify(payload)
     })
     .then(() => {
-      if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Doble vibración corta
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       showStatus("🎉 COMPLETADO CON ÉXITO", "success");
       document.getElementById('fleetForm').reset();
     })
@@ -249,8 +64,3 @@
     statusDiv.className = `status-${type}`;
   }
 </script>
-
-</body>
-</html>
-</body>
-</html>
