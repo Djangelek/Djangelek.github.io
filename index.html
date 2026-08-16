@@ -164,10 +164,23 @@
       color: var(--text);
     }
 
-    .grid-2 {
+    .grid-3 {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .grid-3 {
+        gap: 8px;
+      }
+      .grid-3 label {
+        font-size: 0.78rem;
+      }
+      .grid-3 input {
+        padding: 0 8px;
+        font-size: 0.95rem;
+      }
     }
 
     .btn-submit {
@@ -726,20 +739,24 @@
         <label for="notas">Lugar / Referencia</label>
         <input type="text" id="notas" placeholder="Ej: Isla Grande / Cholon">
 
-        <div class="grid-2">
+        <div class="grid-3">
           <div>
             <label for="pasajeros">Pasajeros</label>
             <input type="number" id="pasajeros" inputmode="numeric" placeholder="0">
           </div>
           <div>
-            <label for="equipaje">Equipaje</label>
-            <input type="number" id="equipaje" inputmode="numeric" placeholder="0">
+            <label for="maletas">Maletas</label>
+            <input type="number" id="maletas" inputmode="numeric" placeholder="0">
+          </div>
+          <div>
+            <label for="bolsos">Bolsos</label>
+            <input type="number" id="bolsos" inputmode="numeric" placeholder="0">
           </div>
         </div>
 
         <label class="checkbox-container">
           <input type="checkbox" id="repetirPax" onchange="togglePaxEquipaje(this.checked)">
-          <span>Usar Pasajeros y equipaje del reporte anterior</span>
+          <span>Usar Pasajeros, maletas y bolsos del reporte anterior</span>
         </label>
 
 
@@ -782,7 +799,7 @@
 
   <script>
     // NUEVA URL ACTUALIZADA
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwdZMKFMSkuvXvfmteheMBgy6jSvmVSvcPf96C0i5u9WMbHj6MyXZyNxJ-eEGQvKiNkNQ/exec";
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwJXsV6GtjguGwutu_mQUq3WcsFIaUwZMJfr27Ub6C6yDkSX16f8F9lvant1QxUG00WnQ/exec";
 
     // URLs conectadas a las pestañas
     const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=hoja%201";
@@ -860,9 +877,11 @@
 
     function togglePaxEquipaje(checked) {
       const inputPax = document.getElementById('pasajeros');
-      const inputEquip = document.getElementById('equipaje');
+      const inputMaletas = document.getElementById('maletas');
+      const inputBolsos = document.getElementById('bolsos');
       inputPax.disabled = checked;
-      inputEquip.disabled = checked;
+      inputMaletas.disabled = checked;
+      inputBolsos.disabled = checked;
       if (checked) cargarUltimoPaxEquipaje();
     }
 
@@ -874,9 +893,11 @@
         const item = ultimosReportesGlobal[barco];
         const keys = Object.keys(item);
         const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
-        const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
+        const maletas = item[keys.find(k => k.toLowerCase().includes('maletas') || k.toLowerCase().includes('equipaje'))] || 0;
+        const bolsos = item[keys.find(k => k.toLowerCase().includes('bolsos'))] || 0;
         document.getElementById('pasajeros').value = pax;
-        document.getElementById('equipaje').value = equip;
+        document.getElementById('maletas').value = maletas;
+        document.getElementById('bolsos').value = bolsos;
       }
     }
 
@@ -903,12 +924,15 @@
 
       let payload = {};
       if (action === "insert") {
+        const maletasVal = document.getElementById('maletas').value || 0;
         payload = {
           action: "insert",
           embarcacion: document.getElementById('embarcacion').value,
           estado: document.getElementById('estado').value,
           pasajeros: document.getElementById('pasajeros').value || 0,
-          equipaje: document.getElementById('equipaje').value || 0,
+          maletas: maletasVal,
+          equipaje: maletasVal, // compatibilidad con Google Apps Script
+          bolsos: document.getElementById('bolsos').value || 0,
           coordenadas: coordsOrData,
           notas: document.getElementById('notas').value
         };
@@ -1024,7 +1048,8 @@
             const barco = item[keys.find(k => k.toLowerCase().includes('embarcacion'))] || 'Sin Nombre';
             const estado = item[keys.find(k => k.toLowerCase().includes('estado'))] || 'N/A';
             const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
-            const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
+            const maletas = item[keys.find(k => k.toLowerCase().includes('maletas') || k.toLowerCase().includes('equipaje'))] || 0;
+            const bolsos = item[keys.find(k => k.toLowerCase().includes('bolsos'))] || 0;
             const lugar = item[keys.find(k => k.toLowerCase().includes('notas'))] || 'Sin ubicación';
             const fecha = item[keys.find(k => k.toLowerCase().includes('fecha'))] || '';
             const rawCoords = item[keys.find(k => k.toLowerCase().includes('coordenadas'))] || '';
@@ -1068,7 +1093,7 @@
                   <span class="status-badge ${statusBadgeClass}">${estado}</span>
                 </div>
                 <div class="map-popup-item"><b>Lugar:</b> ${lugar}</div>
-                <div class="map-popup-item"><b>Pasajeros:</b> ${pax} &bull; <b>Equipaje:</b> ${equip}</div>
+                <div class="map-popup-item"><b>Pax:</b> ${pax} &bull; <b>Maletas:</b> ${maletas} &bull; <b>Bolsos:</b> ${bolsos}</div>
                 <div class="map-popup-time">${fecha}</div>
               </div>
             `;
@@ -1106,7 +1131,8 @@
             <div class="boat-place">Lugar: ${lugar}${gpsIndicator}</div>
             <div class="boat-info">
               <span><b>Pasajeros:</b> ${pax}</span>
-              <span><b>Equipaje:</b> ${equip}</span>
+              <span><b>Maletas:</b> ${maletas}</span>
+              <span><b>Bolsos:</b> ${bolsos}</span>
             </div>
             <div class="boat-time">${fecha}</div>
           `;
