@@ -19,14 +19,14 @@
   <style>
     /* --- VARIABLES DE COLOR Y RESET --- */
     :root {
-      --bg-topbar: #00435b;
+      --bg-topbar: #003a57;
       --text-topbar: #ffffff;
-      --accent-gold: #f5b729;
-      --bg-footer: #ffffff;
-      --text-footer: #333333;
-      --border-footer: #e0e0e0;
+      --accent-gold: #f4b400;
+      --bg-footer: #f7fbfc;
+      --text-footer: #24303a;
+      --border-footer: #e6eef5;
       --bg-modal: #ffffff;
-      --text-modal: #222222;
+      --text-modal: #0f1720;
     }
 
     /* Tema Oscuro */
@@ -66,6 +66,10 @@
       box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
       z-index: 1000;
       height: 65px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
     }
 
     .brand-section {
@@ -106,31 +110,37 @@
     }
 
     .btn-settings {
+      position: absolute;
+      top: 12px;
+      right: 12px;
       background: transparent;
       color: var(--accent-gold);
-      border: 1.5px solid var(--accent-gold);
-      border-radius: 8px;
-      width: 38px;
-      height: 38px;
+      border: 1.2px solid var(--accent-gold);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
+      font-size: 1rem;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: transform 0.25s ease, background-color 0.25s ease, color 0.25s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
 
     .btn-settings:hover {
       background-color: var(--accent-gold);
-      color: #00435b;
-      transform: rotate(45deg);
+      color: var(--bg-topbar);
+      transform: rotate(20deg) scale(1.02);
     }
 
     /* --- CONTENEDOR DEL MAPA --- */
     .map-wrapper {
-      flex: 1;
       position: relative;
       width: 100%;
+      margin-top: 65px; /* dejar espacio para el top */
+      margin-bottom: 44px; /* dejar espacio para el footer */
+      height: calc(100vh - 65px - 44px);
     }
 
     #map {
@@ -149,6 +159,14 @@
       border-top: 1px solid var(--border-footer);
       z-index: 1000;
       transition: background-color 0.3s ease, color 0.3s ease;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* --- MODAL DE CONFIGURACIÓN --- */
@@ -281,7 +299,7 @@
       padding: 10px;
       border: none;
       border-radius: 6px;
-      background-color: #00435b;
+      background-color: var(--bg-topbar);
       color: white;
       font-weight: 600;
       cursor: pointer;
@@ -294,7 +312,7 @@
 
     .btn-action.gold {
       background-color: var(--accent-gold);
-      color: #00435b;
+      color: var(--bg-topbar);
     }
 
     /* Ocultar texto informativo en pantallas muy pequeñas */
@@ -314,7 +332,7 @@
   <header class="top-bar">
     <div class="brand-section">
       <img src="images.jpg" alt="Logo Navega Colombia" class="logo">
-      <h1 class="app-title">Control de Flota</h1>
+      <h1 class="app-title">Navega Colombia</h1>
     </div>
 
     <div class="info-section">
@@ -334,7 +352,7 @@
 
   <!-- BOTTOM BAR -->
   <footer class="bottom-bar">
-    <p>&copy; 2026 Navega Colombia. Todos los derechos reservados.</p>
+    <p id="footer-copy"></p>
   </footer>
 
   <!-- MODAL DE CONFIGURACIÓN -->
@@ -435,6 +453,13 @@
       // Aquí puedes llamar a tu función existente de PapaParse para recargar los puntos
       alert('Actualizando mapa desde Google Sheets...');
     });
+
+    // 5. FOOTER DINÁMICO
+    const footerCopy = document.getElementById('footer-copy');
+    if (footerCopy) {
+      const year = new Date().getFullYear();
+      footerCopy.textContent = `© Navega Colombia ${year}`;
+    }
   </script>
 </body>
 </html>
