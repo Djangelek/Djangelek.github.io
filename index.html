@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Control Flota Náutica - Cartagena</title>
   
-  <!-- Estilos Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <style>
@@ -22,6 +21,7 @@
       --error-text: #fca5a5;
       --info-bg: #0c4a6e;
       --info-text: #7dd3fc;
+      --danger: #ef4444;
     }
 
     * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -169,34 +169,44 @@
     .status-success { background: var(--success-bg); color: var(--success-text); display: block !important; border: 2px solid var(--success-text); }
     .status-error { background: var(--error-bg); color: var(--error-text); display: block !important; }
 
-    /* LAYOUT DEL DASHBOARD NÁUTICO */
+    /* LAYOUT DEL DASHBOARD ARREGLADO PARA MÓVILES */
     .dashboard-layout {
-      display: grid;
-      grid-template-columns: 1fr;
+      display: flex;
+      flex-direction: column; /* Apila el mapa y la lista en móviles */
       gap: 16px;
-    }
-
-    @media (min-width: 768px) {
-      .dashboard-layout {
-        grid-template-columns: 1fr 1fr;
-      }
     }
 
     #map {
       width: 100%;
-      height: 480px;
+      height: 350px;
       border-radius: 12px;
       border: 2px solid var(--border);
       background: #0b1329;
+      z-index: 1;
     }
 
     .fleet-list {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      max-height: 480px;
-      overflow-y: auto;
-      padding-right: 4px;
+      width: 100%;
+    }
+
+    /* En PC se ponen lado a lado */
+    @media (min-width: 768px) {
+      .dashboard-layout {
+        flex-direction: row;
+      }
+      #map {
+        flex: 1;
+        height: 500px;
+      }
+      .fleet-list {
+        flex: 1;
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 6px;
+      }
     }
 
     .boat-card {
@@ -207,6 +217,7 @@
       padding: 12px;
       cursor: pointer;
       transition: transform 0.15s ease, border-color 0.15s ease;
+      position: relative; /* Para poner el botón eliminar */
     }
 
     .boat-card:hover {
@@ -219,6 +230,7 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 6px;
+      padding-right: 30px; /* Espacio para el basurero */
     }
 
     .boat-title {
@@ -257,6 +269,23 @@
       margin-top: 4px;
     }
 
+    .btn-delete {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--error-bg);
+      color: var(--error-text);
+      border: none;
+      border-radius: 6px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
     .btn-refresh {
       width: 100%;
       height: 44px;
@@ -283,23 +312,16 @@
   <div id="reporteTab" class="tab-content active">
     <h2>Reporte Operativo</h2>
     <form id="fleetForm">
+      
       <label for="embarcacion">Embarcacion</label>
       <select id="embarcacion" onchange="cargarUltimoPaxEquipaje()" required>
-        <option value="" disabled selected>Selecciona barco...</option>
-        <option value="Alisio 45">Alisio 45</option>
-        <option value="Hope">Hope / Hope 47</option>
-        <option value="Mistral">Mistral</option>
-        <option value="Valhalla 51">Valhalla 51</option>
-        <option value="Chicote">Chicote</option>
-        <option value="Cahua">Cahua</option>
+        <option value="" disabled selected>Cargando lista...</option>
+        <!-- Llenado automático desde Google Sheets -->
       </select>
 
       <label for="estado">Estado / Actividad</label>
       <select id="estado" required>
-        <option value="📍 En transito">📍 En transito / Rumbo a</option>
-        <option value="⚓ Arribado">⚓ Arribado / En destino</option>
-        <option value="🟡 En amarre">🟡 En amarre</option>
-        <option value="📸 Panoramico">📸 Panoramico</option>
+        <!-- Llenado automático desde Google Sheets -->
       </select>
 
       <div class="grid-2">
@@ -326,7 +348,7 @@
     <div id="status"></div>
   </div>
 
-  <!-- DASHBOARD DIVIDIDO -->
+  <!-- DASHBOARD -->
   <div id="dashboardTab" class="tab-content">
     <h2>Radar & Estado de Flota</h2>
     <button class="btn-refresh" onclick="cargarMapa()">Actualizar Posiciones</button>
@@ -334,7 +356,7 @@
     <div class="dashboard-layout">
       <div id="map"></div>
       <div id="fleetList" class="fleet-list">
-        <div style="text-align: center; color: #64748b; padding: 20px;">Cargando lista de barcos...</div>
+        <div style="text-align: center; color: #64748b; padding: 20px;">Cargando posiciones...</div>
       </div>
     </div>
   </div>
@@ -346,13 +368,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
-  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyI0fTjyU1fMJTsnR0xc170ImOpfVBsY_2ewqcL3yIy0dHc9kZZ6FqE_FIgFc0E21_Igw/exec";
+  // NUEVA URL ACTUALIZADA
+  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwdZMKFMSkuvXvfmteheMBgy6jSvmVSvcPf96C0i5u9WMbHj6MyXZyNxJ-eEGQvKiNkNQ/exec";
+  
+  // URLs conectadas a las pestañas
   const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=hoja%201";
+  const CONFIG_CSV_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=Configuracion";
 
   let map;
   let markersGroup;
   const markersMap = {};
   let ultimosReportesGlobal = {};
+
+  window.onload = function() {
+    cargarConfiguracion();
+    cargarMapa();
+  };
 
   function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -373,16 +404,43 @@
     }
   }
 
+  // --- CARGAR BARCOS Y ESTADOS DE FORMA DINÁMICA ---
+  function cargarConfiguracion() {
+    Papa.parse(CONFIG_CSV_URL + "&t=" + new Date().getTime(), {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        const selectBarco = document.getElementById('embarcacion');
+        const selectEstado = document.getElementById('estado');
+
+        selectBarco.innerHTML = '<option value="" disabled selected>Selecciona barco...</option>';
+        selectEstado.innerHTML = '';
+
+        results.data.forEach(row => {
+          if (row.Barcos && row.Barcos.trim() !== '') {
+            let opt = document.createElement('option');
+            opt.value = row.Barcos.trim();
+            opt.innerText = row.Barcos.trim();
+            selectBarco.appendChild(opt);
+          }
+          if (row.Estados && row.Estados.trim() !== '') {
+            let opt = document.createElement('option');
+            opt.value = row.Estados.trim();
+            opt.innerText = row.Estados.trim();
+            selectEstado.appendChild(opt);
+          }
+        });
+      }
+    });
+  }
+
   function togglePaxEquipaje(checked) {
     const inputPax = document.getElementById('pasajeros');
     const inputEquip = document.getElementById('equipaje');
-    
     inputPax.disabled = checked;
     inputEquip.disabled = checked;
-
-    if (checked) {
-      cargarUltimoPaxEquipaje();
-    }
+    if (checked) cargarUltimoPaxEquipaje();
   }
 
   function cargarUltimoPaxEquipaje() {
@@ -394,7 +452,6 @@
       const keys = Object.keys(item);
       const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
       const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
-
       document.getElementById('pasajeros').value = pax;
       document.getElementById('equipaje').value = equip;
     }
@@ -408,25 +465,33 @@
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`),
-        () => enviarAWebhook("Posicion no disponible"),
+        (pos) => enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`, "insert"),
+        () => enviarAWebhook("Posicion no disponible", "insert"),
         { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
       );
     } else {
-      enviarAWebhook("Navegador sin soporte GPS");
+      enviarAWebhook("Navegador sin soporte GPS", "insert");
     }
   }
 
-  function enviarAWebhook(coords) {
-    showStatus("Guardando reporte...", "info");
-    const payload = {
-      embarcacion: document.getElementById('embarcacion').value,
-      estado: document.getElementById('estado').value,
-      pasajeros: document.getElementById('pasajeros').value || 0,
-      equipaje: document.getElementById('equipaje').value || 0,
-      coordenadas: coords,
-      notas: document.getElementById('notas').value
-    };
+  // Se reutiliza la función Fetch para Reportar o Borrar
+  function enviarAWebhook(coordsOrData, action = "insert") {
+    showStatus("Procesando...", "info");
+    
+    let payload = {};
+    if (action === "insert") {
+      payload = {
+        action: "insert",
+        embarcacion: document.getElementById('embarcacion').value,
+        estado: document.getElementById('estado').value,
+        pasajeros: document.getElementById('pasajeros').value || 0,
+        equipaje: document.getElementById('equipaje').value || 0,
+        coordenadas: coordsOrData,
+        notas: document.getElementById('notas').value
+      };
+    } else if (action === "delete") {
+      payload = { action: "delete", embarcacion: coordsOrData }; // coordsOrData trae el nombre del barco
+    }
 
     fetch(WEBHOOK_URL, {
       method: 'POST',
@@ -436,12 +501,22 @@
     })
     .then(() => {
       showStatus("COMPLETADO CON EXITO", "success");
-      document.getElementById('fleetForm').reset();
-      document.getElementById('repetirPax').checked = false;
-      togglePaxEquipaje(false);
-      cargarMapa();
+      if (action === "insert") {
+        document.getElementById('fleetForm').reset();
+        document.getElementById('repetirPax').checked = false;
+        togglePaxEquipaje(false);
+      }
+      setTimeout(() => cargarMapa(), 1500); // Recarga tras 1.5s
     })
     .catch(() => showStatus("Error de red.", "error"));
+  }
+
+  function eliminarBarcoEvent(e, barcoNombre) {
+    e.stopPropagation(); // Evita que se abra el mapa al darle click al basurero
+    const confirmar = confirm(`¿Estás seguro de que deseas ELIMINAR TODOS los reportes de ${barcoNombre}? Esta acción no se puede deshacer.`);
+    if (confirmar) {
+      enviarAWebhook(barcoNombre, "delete");
+    }
   }
 
   function showStatus(msg, type) {
@@ -464,7 +539,6 @@
     }).addTo(map);
 
     markersGroup = L.layerGroup().addTo(map);
-
     setTimeout(() => map.invalidateSize(), 300);
   }
 
@@ -491,7 +565,6 @@
         });
 
         const listItems = Object.values(ultimosReportesGlobal);
-
         cargarUltimoPaxEquipaje();
 
         if (!fleetListDiv) return;
@@ -546,6 +619,7 @@
           card.onclick = () => focusOnBoat(barco);
 
           card.innerHTML = `
+            <button class="btn-delete" onclick="eliminarBarcoEvent(event, '${barco}')" title="Eliminar registros">🗑️</button>
             <div class="boat-header">
               <span class="boat-title">${barco}</span>
               <span class="boat-status">${estado}</span>
@@ -574,10 +648,6 @@
       }
     }
   }
-
-  window.onload = function() {
-    cargarMapa();
-  };
 </script>
 
 </body>
