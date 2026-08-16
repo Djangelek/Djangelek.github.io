@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Control Flota Náutica - Cartagena</title>
-  
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
+
   <style>
     :root {
       --bg: #0f172a;
@@ -25,34 +26,44 @@
       --danger: #ef4444;
     }
 
-    * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    * {
+      box-sizing: border-box;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg);
       color: var(--text);
       margin: 0;
-      padding: 12px;
+      padding: 14px 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
     }
 
+    .nav-tabs,
+    .container,
+    .site-header,
+    .site-footer {
+      width: 100%;
+      max-width: 1260px;
+    }
+
     .nav-tabs {
       display: flex;
-      width: 100%;
-      max-width: 900px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       background: var(--card);
       border-radius: 12px;
       padding: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     }
 
     .tab-btn {
       flex: 1;
-      padding: 12px;
+      padding: 13px;
       border: none;
       background: transparent;
       color: var(--text);
@@ -60,6 +71,7 @@
       border-radius: 8px;
       cursor: pointer;
       font-size: 0.95rem;
+      transition: background 0.2s ease, color 0.2s ease;
     }
 
     .tab-btn.active {
@@ -68,20 +80,29 @@
     }
 
     .container {
-      width: 100%;
-      max-width: 900px;
       background: var(--card);
       border-radius: 16px;
-      padding: 20px 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      padding: 22px 18px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     }
 
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Formulario centrado y cómodo en PC */
+    #reporteTab form {
+      max-width: 620px;
+      margin: 0 auto;
+    }
 
     h2 {
       margin: 0 0 16px 0;
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       text-align: center;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -97,11 +118,13 @@
       text-transform: uppercase;
     }
 
-    select, input[type="text"], input[type="number"] {
+    select,
+    input[type="text"],
+    input[type="number"] {
       width: 100%;
-      height: 54px;
+      height: 52px;
       padding: 0 14px;
-      font-size: 1.05rem;
+      font-size: 1rem;
       border-radius: 12px;
       border: 2px solid var(--border);
       background-color: var(--bg);
@@ -120,7 +143,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 12px;
       background: var(--bg);
       padding: 12px 14px;
       border-radius: 10px;
@@ -141,19 +164,32 @@
       color: var(--text);
     }
 
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
 
     .btn-submit {
       width: 100%;
-      height: 60px;
+      height: 56px;
       margin-top: 22px;
       background-color: var(--primary);
       color: #0f172a;
       border: none;
       border-radius: 14px;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 800;
       cursor: pointer;
+      transition: opacity 0.2s ease, transform 0.1s ease;
+    }
+
+    .btn-submit:hover {
+      opacity: 0.95;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.99);
     }
 
     #status {
@@ -164,22 +200,118 @@
       text-align: center;
       font-size: 0.95rem;
       display: none;
+      max-width: 620px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .status-info { background: var(--info-bg); color: var(--info-text); display: block !important; }
-    .status-success { background: var(--success-bg); color: var(--success-text); display: block !important; border: 2px solid var(--success-text); }
-    .status-error { background: var(--error-bg); color: var(--error-text); display: block !important; }
+    .status-info {
+      background: var(--info-bg);
+      color: var(--info-text);
+      display: block !important;
+    }
 
-    /* LAYOUT DEL DASHBOARD ARREGLADO PARA MÓVILES */
+    .status-success {
+      background: var(--success-bg);
+      color: var(--success-text);
+      display: block !important;
+      border: 2px solid var(--success-text);
+    }
+
+    .status-error {
+      background: var(--error-bg);
+      color: var(--error-text);
+      display: block !important;
+    }
+
+    /* CONTROLES Y CABECERA DEL DASHBOARD */
+    .dashboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .dashboard-header h2 {
+      margin: 0;
+      text-align: left;
+      font-size: 1.25rem;
+    }
+
+    .fleet-counter-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .dashboard-controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    @media (min-width: 600px) {
+      .dashboard-controls {
+        grid-template-columns: 1fr auto;
+      }
+    }
+
+    .map-selector {
+      height: 46px;
+      padding: 0 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background-color: var(--bg);
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .btn-refresh {
+      height: 46px;
+      min-width: 180px;
+      padding: 0 16px;
+      background: var(--bg);
+      color: var(--text);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .btn-refresh:hover {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    /* LAYOUT RESPONSIVO: MÓVIL Y ESCRITORIO */
     .dashboard-layout {
       display: flex;
-      flex-direction: column; /* Apila el mapa y la lista en móviles */
+      flex-direction: column;
       gap: 16px;
     }
 
     #map {
       width: 100%;
-      height: 350px;
+      height: clamp(340px, 48vh, 440px);
       border-radius: 12px;
       border: 2px solid var(--border);
       background: #0b1329;
@@ -193,32 +325,58 @@
       width: 100%;
     }
 
-    /* En PC se ponen lado a lado */
-    @media (min-width: 768px) {
+    /* En Computador / Tablet horizontal */
+    @media (min-width: 900px) {
       .dashboard-layout {
         flex-direction: row;
+        align-items: stretch;
+        gap: 20px;
       }
+
       #map {
-        flex: 1;
-        height: 500px;
+        flex: 1.6;
+        height: calc(100vh - 280px);
+        min-height: 520px;
       }
+
       .fleet-list {
         flex: 1;
-        max-height: 500px;
+        max-height: calc(100vh - 280px);
+        min-height: 520px;
         overflow-y: auto;
         padding-right: 6px;
       }
     }
 
+    /* Scrollbar estético para la lista en PC */
+    .fleet-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .fleet-list::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 4px;
+    }
+
+    .fleet-list::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    .fleet-list::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* TARJETAS DE EMBARCACIÓN */
     .boat-card {
       background: var(--bg);
       border: 1px solid var(--border);
       border-left: 4px solid var(--primary);
       border-radius: 10px;
-      padding: 12px;
+      padding: 12px 14px;
       cursor: pointer;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-      position: relative; /* Para poner el botón eliminar */
+      transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+      position: relative;
     }
 
     .boat-card:hover {
@@ -226,27 +384,68 @@
       border-color: var(--primary);
     }
 
+    .boat-card.active {
+      border-color: var(--primary);
+      border-left-width: 5px;
+      background: rgba(56, 189, 248, 0.12);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+
     .boat-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 6px;
-      padding-right: 30px; /* Espacio para el basurero */
+      padding-right: 32px;
+      gap: 8px;
     }
 
     .boat-title {
       font-weight: 800;
       font-size: 1.05rem;
       color: var(--primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .boat-status {
-      font-size: 0.8rem;
-      background: var(--card);
+    /* ETIQUETAS DE ESTADO */
+    .status-badge {
+      font-size: 0.78rem;
       padding: 2px 8px;
       border-radius: 6px;
-      border: 1px solid var(--border);
       font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-badge.status-navigating {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .status-badge.status-anchored {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .status-badge.status-docked {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .status-badge.status-maintenance {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .status-badge.status-default {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
     }
 
     .boat-place {
@@ -254,6 +453,7 @@
       font-weight: 600;
       color: var(--text);
       margin-bottom: 6px;
+      line-height: 1.3;
     }
 
     .boat-info {
@@ -262,6 +462,7 @@
       display: flex;
       gap: 14px;
       margin-bottom: 4px;
+      flex-wrap: wrap;
     }
 
     .boat-time {
@@ -283,46 +484,38 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
     }
 
-    .btn-refresh {
-      width: 100%;
-      height: 44px;
-      margin-bottom: 12px;
-      background: var(--bg);
-      color: var(--text);
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
+    .btn-delete:hover {
+      transform: scale(1.1);
+      background: #991b1b;
     }
 
     /* HEADER y FOOTER */
     .site-header {
-      width: 100%;
-      max-width: 900px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 12px;
-      padding: 12px 20px;
-      margin: 0 auto 12px auto;
-      background: linear-gradient(90deg, rgba(56,189,248,0.06), rgba(2,132,199,0.04));
-      border-radius: 12px;
-      box-shadow: 0 6px 18px rgba(2,6,23,0.45);
+      padding: 14px 20px;
+      margin: 0 auto 14px auto;
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.08), rgba(2, 132, 199, 0.05));
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(2, 6, 23, 0.45);
       position: static;
       z-index: 10;
       backdrop-filter: blur(6px);
     }
 
     .site-header img {
-      height: 64px;
+      height: 60px;
       width: auto;
       border-radius: 10px;
       display: block;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
     }
 
     .site-brand {
@@ -332,7 +525,7 @@
     }
 
     .site-brand .brand-name {
-      font-size: 1.35rem;
+      font-size: 1.4rem;
       font-weight: 900;
       color: var(--text);
       line-height: 1;
@@ -340,54 +533,161 @@
     }
 
     .site-brand .brand-tag {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: #94a3b8;
       font-weight: 700;
     }
 
     @media (max-width: 480px) {
-      .site-header img { height: 48px; }
-      .site-brand .brand-name { font-size: 1.05rem; }
-      .site-header { width: calc(100% - 24px); }
+      .site-header img {
+        height: 46px;
+      }
+
+      .site-brand .brand-name {
+        font-size: 1.1rem;
+      }
+
+      .site-header {
+        padding: 10px 14px;
+      }
     }
 
     .site-footer {
-      width: 100%;
-      max-width: 900px;
-      margin-top: 18px;
+      margin-top: 20px;
       padding: 12px 14px;
       text-align: center;
       color: #94a3b8;
       font-size: 0.9rem;
     }
-    /* FIXED map marker (DOM) and fixed popup text size */
+
+    /* MARCADORES MAPA */
     .fixed-dot .dot {
       display: block;
-      width: 10px;
-      height: 10px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background: #38bdf8;
-      border: 1px solid #0284c7;
-      box-shadow: 0 1px 3px rgba(2,6,23,0.5);
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.9), 0 2px 5px rgba(0, 0, 0, 0.6);
+      transition: transform 0.2s ease;
     }
 
-    /* For Leaflet popups, force fixed px font sizes so they don't visually change */
-    /* popup content scales with map zoom via --popup-scale */
+    .fixed-dot:hover .dot {
+      transform: scale(1.25);
+      background: #0ea5e9;
+    }
+
+    /* POPUPS LEAFLET */
+    .leaflet-popup {
+      margin-bottom: 10px;
+    }
+
+    .leaflet-popup-content-wrapper {
+      padding: 0 !important;
+      background: #1e293b !important;
+      border: 1px solid #334155 !important;
+      border-radius: 8px !important;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5) !important;
+      min-width: 200px !important;
+      max-width: 290px !important;
+      width: max-content !important;
+      overflow: hidden;
+    }
+
+    @media (max-width: 480px) {
+      .leaflet-popup-content-wrapper {
+        min-width: 180px !important;
+        max-width: 250px !important;
+      }
+    }
+
+    .leaflet-popup-tip {
+      background: #1e293b !important;
+      border: 1px solid #334155 !important;
+    }
+
+    .leaflet-container a.leaflet-popup-close-button {
+      top: 6px !important;
+      right: 6px !important;
+      padding: 2px !important;
+      color: #94a3b8 !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      line-height: 16px !important;
+      width: 20px !important;
+      height: 20px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 4px !important;
+      transition: background 0.15s ease, color 0.15s ease;
+      z-index: 10;
+    }
+
+    .leaflet-container a.leaflet-popup-close-button:hover {
+      color: #f8fafc !important;
+      background: rgba(255, 255, 255, 0.12) !important;
+    }
+
     .leaflet-container .leaflet-popup-content {
-      font-size: calc(13px * var(--popup-scale, 1)) !important;
-      line-height: 1.2 !important;
-      color: #0f172a !important;
+      margin: 10px 14px 10px 12px !important;
+      line-height: 1.35 !important;
+      font-size: calc(11.5px * var(--popup-scale, 1)) !important;
+      color: #f8fafc !important;
+      min-width: 190px;
+      max-width: 275px;
     }
 
-    .leaflet-container .leaflet-popup-content-wrapper {
-      padding: 6px 8px !important;
-      background: #f8fafc !important;
-      border-radius: 6px !important;
-      /* Width scales but has an absolute cap to avoid excessive growth */
-      max-width: min(calc(220px * var(--popup-scale, 1)), 360px) !important;
+    .map-popup-card {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-family: inherit;
+    }
+
+    .map-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 5px;
+      margin-bottom: 4px;
+      padding-right: 22px;
+    }
+
+    .map-popup-title {
+      font-weight: 800;
+      font-size: calc(13.5px * var(--popup-scale, 1));
+      color: #38bdf8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      max-width: 175px;
+    }
+
+    .map-popup-item {
+      font-size: calc(11.5px * var(--popup-scale, 1));
+      color: #cbd5e1;
+      line-height: 1.3;
+      word-break: normal;
+    }
+
+    .map-popup-item b {
+      color: #f8fafc;
+    }
+
+    .map-popup-time {
+      font-size: calc(9.5px * var(--popup-scale, 1));
+      color: #94a3b8;
+      margin-top: 3px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.1);
+      padding-top: 3px;
     }
   </style>
 </head>
+
 <body>
 
   <header class="site-header" role="banner">
@@ -400,418 +700,528 @@
     </div>
   </header>
 
-<div class="nav-tabs">
-  <button class="tab-btn active" onclick="switchTab('reporteTab', this)">REPORTAR</button>
-  <button class="tab-btn" onclick="switchTab('dashboardTab', this)">MAPA NÁUTICO</button>
-</div>
-
-<div class="container">
-  
-  <!-- FORMULARIO DE REPORTE -->
-  <div id="reporteTab" class="tab-content active">
-    <h2>Reporte Operativo</h2>
-    <form id="fleetForm">
-      
-      <label for="embarcacion">Embarcacion / Yate</label>
-      <select id="embarcacion" onchange="cargarUltimoPaxEquipaje()" required>
-        <option value="" disabled selected>Cargando lista...</option>
-        <!-- Llenado automático desde Google Sheets -->
-      </select>
-
-      <label for="estado">Estado / Actividad</label>
-      <select id="estado" required>
-        <!-- Llenado automático desde Google Sheets -->
-      </select>
-
-      <label for="notas">Lugar / Referencia</label>
-      <input type="text" id="notas" placeholder="Ej: Isla Grande / Cholon">
-
-      <div class="grid-2">
-        <div>
-          <label for="pasajeros">Pasajeros</label>
-          <input type="number" id="pasajeros" inputmode="numeric" placeholder="0">
-        </div>
-        <div>
-          <label for="equipaje">Equipaje</label>
-          <input type="number" id="equipaje" inputmode="numeric" placeholder="0">
-        </div>
-      </div>
-
-      <label class="checkbox-container">
-        <input type="checkbox" id="repetirPax" onchange="togglePaxEquipaje(this.checked)">
-        <span>Usar Pasajeros y equipaje del reporte anterior</span>
-      </label>
-
-      
-
-      <button type="button" class="btn-submit" onclick="enviarReporte()">ENVIAR REPORTE</button>
-    </form>
-    <div id="status"></div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('reporteTab', this)">REPORTAR</button>
+    <button class="tab-btn" onclick="switchTab('dashboardTab', this)">MAPA NÁUTICO</button>
   </div>
 
-  <!-- DASHBOARD -->
-  <div id="dashboardTab" class="tab-content">
-    <h2>Radar & Estado de Flota</h2>
-    <button class="btn-refresh" onclick="cargarMapa()">Actualizar Posiciones</button>
-    
-    <div class="dashboard-layout">
-      <div id="map"></div>
-      <div id="fleetList" class="fleet-list">
-        <div style="text-align: center; color: #64748b; padding: 20px;">Cargando posiciones...</div>
+  <div class="container">
+
+    <!-- FORMULARIO DE REPORTE -->
+    <div id="reporteTab" class="tab-content active">
+      <h2>Reporte Operativo</h2>
+      <form id="fleetForm">
+
+        <label for="embarcacion">Embarcacion / Yate</label>
+        <select id="embarcacion" onchange="cargarUltimoPaxEquipaje()" required>
+          <option value="" disabled selected>Cargando lista...</option>
+          <!-- Llenado automático desde Google Sheets -->
+        </select>
+
+        <label for="estado">Estado / Actividad</label>
+        <select id="estado" required>
+          <!-- Llenado automático desde Google Sheets -->
+        </select>
+
+        <label for="notas">Lugar / Referencia</label>
+        <input type="text" id="notas" placeholder="Ej: Isla Grande / Cholon">
+
+        <div class="grid-2">
+          <div>
+            <label for="pasajeros">Pasajeros</label>
+            <input type="number" id="pasajeros" inputmode="numeric" placeholder="0">
+          </div>
+          <div>
+            <label for="equipaje">Equipaje</label>
+            <input type="number" id="equipaje" inputmode="numeric" placeholder="0">
+          </div>
+        </div>
+
+        <label class="checkbox-container">
+          <input type="checkbox" id="repetirPax" onchange="togglePaxEquipaje(this.checked)">
+          <span>Usar Pasajeros y equipaje del reporte anterior</span>
+        </label>
+
+
+
+        <button type="button" class="btn-submit" onclick="enviarReporte()">ENVIAR REPORTE</button>
+      </form>
+      <div id="status"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboardTab" class="tab-content">
+      <div class="dashboard-header">
+        <h2>Radar & Estado de Flota</h2>
+        <span id="fleetCountBadge" class="fleet-counter-badge">⚓ Cargando flota...</span>
+      </div>
+      <div class="dashboard-controls">
+        <select id="mapBoatSelector" class="map-selector" onchange="onSelectBoatFilter(this.value)">
+          <option value="ALL">📍 Mostrar todos los barcos</option>
+        </select>
+        <button class="btn-refresh" onclick="cargarMapa()">🔄 Actualizar Posiciones</button>
+      </div>
+
+      <div class="dashboard-layout">
+        <div id="map"></div>
+        <div id="fleetList" class="fleet-list">
+          <div style="text-align: center; color: #64748b; padding: 20px;">Cargando posiciones...</div>
+        </div>
       </div>
     </div>
+
   </div>
 
-</div>
-
-<!-- Librerías JS -->
+  <!-- Librerías JS -->
   <footer class="site-footer">
     <div>Colombia Navega &copy; <span id="year"></span></div>
   </footer>
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
-<script>
-  // NUEVA URL ACTUALIZADA
-  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwdZMKFMSkuvXvfmteheMBgy6jSvmVSvcPf96C0i5u9WMbHj6MyXZyNxJ-eEGQvKiNkNQ/exec";
-  
-  // URLs conectadas a las pestañas
-  const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=hoja%201";
-  const CONFIG_CSV_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=Configuracion";
+  <script>
+    // NUEVA URL ACTUALIZADA
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwdZMKFMSkuvXvfmteheMBgy6jSvmVSvcPf96C0i5u9WMbHj6MyXZyNxJ-eEGQvKiNkNQ/exec";
 
-  let map;
-  let markersGroup;
-  const markersMap = {};
-  let ultimosReportesGlobal = {};
+    // URLs conectadas a las pestañas
+    const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=hoja%201";
+    const CONFIG_CSV_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=Configuracion";
 
-  window.onload = function() {
-    cargarConfiguracion();
-    cargarMapa();
-  };
+    let map;
+    let markersGroup;
+    const markersMap = {};
+    let ultimosReportesGlobal = {};
 
-  function switchTab(tabId, btn) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    
-    document.getElementById(tabId).classList.add('active');
-    btn.classList.add('active');
+    window.onload = function () {
+      cargarConfiguracion();
+      cargarMapa();
+    };
 
-    if(tabId === 'dashboardTab') {
-      setTimeout(() => {
-        if (!map) {
-          initMap();
-        } else {
-          map.invalidateSize();
-        }
-        cargarMapa();
-      }, 250);
+    function getStatusBadgeClass(estado) {
+      if (!estado) return 'status-default';
+      const s = estado.toLowerCase();
+      if (s.includes('naveg') || s.includes('viaje') || s.includes('rumbo') || s.includes('marcha')) return 'status-navigating';
+      if (s.includes('fond') || s.includes('anc') || s.includes('isla') || s.includes('espera')) return 'status-anchored';
+      if (s.includes('muelle') || s.includes('puerto') || s.includes('marina') || s.includes('embarque')) return 'status-docked';
+      if (s.includes('manten') || s.includes('varad') || s.includes('fuera') || s.includes('dañ')) return 'status-maintenance';
+      return 'status-default';
     }
-  }
 
-  // --- CARGAR BARCOS Y ESTADOS DE FORMA DINÁMICA ---
-  function cargarConfiguracion() {
-    Papa.parse(CONFIG_CSV_URL + "&t=" + new Date().getTime(), {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        const selectBarco = document.getElementById('embarcacion');
-        const selectEstado = document.getElementById('estado');
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
-        selectBarco.innerHTML = '<option value="" disabled selected>Selecciona barco...</option>';
-        selectEstado.innerHTML = '';
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
 
-        results.data.forEach(row => {
-          if (row.Barcos && row.Barcos.trim() !== '') {
-            let opt = document.createElement('option');
-            opt.value = row.Barcos.trim();
-            opt.innerText = row.Barcos.trim();
-            selectBarco.appendChild(opt);
+      if (tabId === 'dashboardTab') {
+        setTimeout(() => {
+          if (!map) {
+            initMap();
+          } else {
+            map.invalidateSize();
           }
-          if (row.Estados && row.Estados.trim() !== '') {
-            let opt = document.createElement('option');
-            opt.value = row.Estados.trim();
-            opt.innerText = row.Estados.trim();
-            selectEstado.appendChild(opt);
-          }
-        });
+          cargarMapa();
+        }, 250);
       }
-    });
-  }
-
-  function togglePaxEquipaje(checked) {
-    const inputPax = document.getElementById('pasajeros');
-    const inputEquip = document.getElementById('equipaje');
-    inputPax.disabled = checked;
-    inputEquip.disabled = checked;
-    if (checked) cargarUltimoPaxEquipaje();
-  }
-
-  function cargarUltimoPaxEquipaje() {
-    const barco = document.getElementById('embarcacion').value;
-    const checkbox = document.getElementById('repetirPax');
-
-    if (checkbox.checked && barco && ultimosReportesGlobal[barco]) {
-      const item = ultimosReportesGlobal[barco];
-      const keys = Object.keys(item);
-      const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
-      const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
-      document.getElementById('pasajeros').value = pax;
-      document.getElementById('equipaje').value = equip;
-    }
-  }
-
-  function enviarReporte() {
-    const barco = document.getElementById('embarcacion').value;
-    if (!barco) { showStatus("Selecciona una embarcacion.", "error"); return; }
-
-    showStatus("Obteniendo posicion...", "info");
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`, "insert"),
-        () => enviarAWebhook("Posicion no disponible", "insert"),
-        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-      );
-    } else {
-      enviarAWebhook("Navegador sin soporte GPS", "insert");
-    }
-  }
-
-  // Se reutiliza la función Fetch para Reportar o Borrar
-  function enviarAWebhook(coordsOrData, action = "insert") {
-    showStatus("Procesando...", "info");
-    
-    let payload = {};
-    if (action === "insert") {
-      payload = {
-        action: "insert",
-        embarcacion: document.getElementById('embarcacion').value,
-        estado: document.getElementById('estado').value,
-        pasajeros: document.getElementById('pasajeros').value || 0,
-        equipaje: document.getElementById('equipaje').value || 0,
-        coordenadas: coordsOrData,
-        notas: document.getElementById('notas').value
-      };
-    } else if (action === "delete") {
-      payload = { action: "delete", embarcacion: coordsOrData }; // coordsOrData trae el nombre del barco
     }
 
-    fetch(WEBHOOK_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    .then(() => {
-      showStatus("COMPLETADO CON EXITO", "success");
+    // --- CARGAR BARCOS Y ESTADOS DE FORMA DINÁMICA ---
+    function cargarConfiguracion() {
+      Papa.parse(CONFIG_CSV_URL + "&t=" + new Date().getTime(), {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function (results) {
+          const selectBarco = document.getElementById('embarcacion');
+          const selectEstado = document.getElementById('estado');
+
+          selectBarco.innerHTML = '<option value="" disabled selected>Selecciona barco...</option>';
+          selectEstado.innerHTML = '';
+
+          results.data.forEach(row => {
+            if (row.Barcos && row.Barcos.trim() !== '') {
+              let opt = document.createElement('option');
+              opt.value = row.Barcos.trim();
+              opt.innerText = row.Barcos.trim();
+              selectBarco.appendChild(opt);
+            }
+            if (row.Estados && row.Estados.trim() !== '') {
+              let opt = document.createElement('option');
+              opt.value = row.Estados.trim();
+              opt.innerText = row.Estados.trim();
+              selectEstado.appendChild(opt);
+            }
+          });
+        }
+      });
+    }
+
+    function togglePaxEquipaje(checked) {
+      const inputPax = document.getElementById('pasajeros');
+      const inputEquip = document.getElementById('equipaje');
+      inputPax.disabled = checked;
+      inputEquip.disabled = checked;
+      if (checked) cargarUltimoPaxEquipaje();
+    }
+
+    function cargarUltimoPaxEquipaje() {
+      const barco = document.getElementById('embarcacion').value;
+      const checkbox = document.getElementById('repetirPax');
+
+      if (checkbox.checked && barco && ultimosReportesGlobal[barco]) {
+        const item = ultimosReportesGlobal[barco];
+        const keys = Object.keys(item);
+        const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
+        const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
+        document.getElementById('pasajeros').value = pax;
+        document.getElementById('equipaje').value = equip;
+      }
+    }
+
+    function enviarReporte() {
+      const barco = document.getElementById('embarcacion').value;
+      if (!barco) { showStatus("Selecciona una embarcacion.", "error"); return; }
+
+      showStatus("Obteniendo posicion...", "info");
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`, "insert"),
+          () => enviarAWebhook("Posicion no disponible", "insert"),
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+        );
+      } else {
+        enviarAWebhook("Navegador sin soporte GPS", "insert");
+      }
+    }
+
+    // Se reutiliza la función Fetch para Reportar o Borrar
+    function enviarAWebhook(coordsOrData, action = "insert") {
+      showStatus("Procesando...", "info");
+
+      let payload = {};
       if (action === "insert") {
-        document.getElementById('fleetForm').reset();
-        document.getElementById('repetirPax').checked = false;
-        togglePaxEquipaje(false);
+        payload = {
+          action: "insert",
+          embarcacion: document.getElementById('embarcacion').value,
+          estado: document.getElementById('estado').value,
+          pasajeros: document.getElementById('pasajeros').value || 0,
+          equipaje: document.getElementById('equipaje').value || 0,
+          coordenadas: coordsOrData,
+          notas: document.getElementById('notas').value
+        };
+      } else if (action === "delete") {
+        payload = { action: "delete", embarcacion: coordsOrData };
       }
-      setTimeout(() => cargarMapa(), 1500); // Recarga tras 1.5s
-    })
-    .catch(() => showStatus("Error de red.", "error"));
-  }
 
-  function eliminarBarcoEvent(e, barcoNombre) {
-    e.stopPropagation(); // Evita que se abra el mapa al darle click al basurero
-    const confirmar = confirm(`¿Estás seguro de que deseas ELIMINAR TODOS los reportes de ${barcoNombre}? Esta acción no se puede deshacer.`);
-    if (confirmar) {
-      enviarAWebhook(barcoNombre, "delete");
+      fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(() => {
+          showStatus("COMPLETADO CON EXITO", "success");
+          if (action === "insert") {
+            document.getElementById('fleetForm').reset();
+            document.getElementById('repetirPax').checked = false;
+            togglePaxEquipaje(false);
+          }
+          setTimeout(() => cargarMapa(), 1500);
+        })
+        .catch(() => showStatus("Error de red.", "error"));
     }
-  }
 
-  function showStatus(msg, type) {
-    const statusDiv = document.getElementById('status');
-    statusDiv.innerText = msg;
-    statusDiv.className = `status-${type}`;
-  }
+    function eliminarBarcoEvent(e, barcoNombre) {
+      e.stopPropagation();
+      const confirmar = confirm(`¿Estás seguro de que deseas ELIMINAR TODOS los reportes de ${barcoNombre}? Esta acción no se puede deshacer.`);
+      if (confirmar) {
+        enviarAWebhook(barcoNombre, "delete");
+      }
+    }
 
-  function initMap() {
-    map = L.map('map', {
-      zoomAnimation: true,
-      fadeAnimation: true,
-      markerZoomAnimation: true
-    }).setView([10.4000, -75.5300], 11);
-    
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-      subdomains: 'abcd',
-      attribution: '&copy; CARTO'
-    }).addTo(map);
+    function showStatus(msg, type) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.innerText = msg;
+      statusDiv.className = `status-${type}`;
+    }
 
-    markersGroup = L.layerGroup().addTo(map);
-    setTimeout(() => map.invalidateSize(), 300);
+    function initMap() {
+      map = L.map('map', {
+        zoomAnimation: true,
+        fadeAnimation: true,
+        markerZoomAnimation: true
+      }).setView([10.4000, -75.5300], 11);
 
-    // Ajustes dinámicos de popups según zoom
-    map.on('zoomend', () => {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd',
+        attribution: '&copy; CARTO'
+      }).addTo(map);
+
+      markersGroup = L.layerGroup().addTo(map);
+      setTimeout(() => map.invalidateSize(), 300);
+
+      map.on('zoomend', () => {
+        updatePopupScale();
+      });
       updatePopupScale();
-      updatePopupsOpenState();
-    });
-    // Inicializar escala y estado
-    updatePopupScale();
-  }
+    }
 
-  // Escala el tamaño del contenido de los popups según zoom
-  function updatePopupScale() {
-    if (!map) return;
-    const z = map.getZoom();
-    // Considerar también la cantidad de marcadores para reducir tamaño cuando hay muchos
-    const count = (markersGroup && markersGroup.getLayers) ? markersGroup.getLayers().length : Object.keys(markersMap).length;
-    const base = 1 + (z - 11) * 0.12; // escala basada en zoom
-    // factor de densidad: disminuye con la raíz cuadrada de la cantidad
-    const densityFactor = count <= 1 ? 1 : Math.max(0.35, Math.min(1, 3 / Math.sqrt(count)));
-    let rawScale = base * densityFactor;
-    // clamp to sensible bounds so popups never grow/shrink too much
-    const minScale = 0.45;
-    const maxScale = 1.15; // cap máximo para evitar que crezcan demasiado
-    let scale = Math.max(minScale, Math.min(rawScale, maxScale));
-    document.documentElement.style.setProperty('--popup-scale', scale);
-    // También ajustar variable de ancho relativa para cálculo en CSS
-    document.documentElement.style.setProperty('--popup-scale-raw', scale);
-  }
+    function updatePopupScale() {
+      if (!map) return;
+      const z = map.getZoom();
+      let scale = Math.max(0.85, Math.min(1.08, 1 + (z - 11) * 0.035));
+      document.documentElement.style.setProperty('--popup-scale', scale);
+    }
 
-  // Abre o cierra popups dependiendo del nivel de zoom
-  function updatePopupsOpenState() {
-    if (!map) return;
-    // Abrir todos los popups (su tamaño se ajusta por updatePopupScale)
-    Object.keys(markersMap).forEach(key => {
-      const entry = markersMap[key];
-      try {
-        entry.marker.openPopup();
-      } catch (e) {}
-    });
-  }
+    function cargarMapa() {
+      Papa.parse(CSV_SHEET_URL + "&t=" + new Date().getTime(), {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function (results) {
+          if (markersGroup) markersGroup.clearLayers();
+          for (let key in markersMap) delete markersMap[key];
 
-  function cargarMapa() {
-    Papa.parse(CSV_SHEET_URL + "&t=" + new Date().getTime(), {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        if (markersGroup) markersGroup.clearLayers();
-        for (let key in markersMap) delete markersMap[key];
+          const fleetListDiv = document.getElementById('fleetList');
+          if (fleetListDiv) fleetListDiv.innerHTML = '';
 
-        const fleetListDiv = document.getElementById('fleetList');
-        if (fleetListDiv) fleetListDiv.innerHTML = '';
-
-        ultimosReportesGlobal = {};
-
-        results.data.forEach(row => {
-          const keys = Object.keys(row);
-          const barcoKey = keys.find(k => k.toLowerCase().includes('embarcacion'));
-          if (barcoKey && row[barcoKey] && row[barcoKey].trim() !== '') {
-            ultimosReportesGlobal[row[barcoKey].trim()] = row;
-          }
-        });
-
-        const listItems = Object.values(ultimosReportesGlobal);
-        cargarUltimoPaxEquipaje();
-
-        if (!fleetListDiv) return;
-
-        if (listItems.length === 0) {
-          fleetListDiv.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">No hay reportes registrados.</div>';
-          return;
-        }
-
-        listItems.forEach(item => {
-          const keys = Object.keys(item);
-          const barco = item[keys.find(k => k.toLowerCase().includes('embarcacion'))] || 'Sin Nombre';
-          const estado = item[keys.find(k => k.toLowerCase().includes('estado'))] || 'N/A';
-          const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
-          const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
-          const lugar = item[keys.find(k => k.toLowerCase().includes('notas'))] || 'Sin ubicación específica';
-          const fecha = item[keys.find(k => k.toLowerCase().includes('fecha'))] || '';
-          const rawCoords = item[keys.find(k => k.toLowerCase().includes('coordenadas'))] || '';
-
-          let lat = null, lng = null;
-          if (rawCoords && rawCoords.includes(',')) {
-            const parts = rawCoords.split(',');
-            lat = parseFloat(parts[0].trim());
-            lng = parseFloat(parts[1].trim());
+          const selectorElem = document.getElementById('mapBoatSelector');
+          if (selectorElem) {
+            selectorElem.innerHTML = '<option value="ALL">📍 Mostrar todos los barcos</option>';
           }
 
-          if (map && !isNaN(lat) && !isNaN(lng) && lat !== null) {
-            // Crear marcador como un divIcon para que su tamaño sea fijo en píxeles
-            const icon = L.divIcon({
-              className: 'fixed-dot',
-              html: '<span class="dot"></span>',
-              iconSize: [12, 12],
-              iconAnchor: [6, 6]
-            });
+          ultimosReportesGlobal = {};
 
-            const marker = L.marker([lat, lng], { icon: icon });
+          results.data.forEach(row => {
+            const keys = Object.keys(row);
+            const barcoKey = keys.find(k => k.toLowerCase().includes('embarcacion'));
+            if (barcoKey && row[barcoKey] && row[barcoKey].trim() !== '') {
+              ultimosReportesGlobal[row[barcoKey].trim()] = row;
+            }
+          });
 
-            const popupText = `
-              <div style="font-family: sans-serif; padding: 2px 0; color: #0f172a;">
-                <b style="font-size: 14px; color: #0284c7; display:block;">${barco}</b>
-                <div style="font-size:13px; color:#0f172a;">
-                  <div><b>Estado:</b> ${estado}</div>
-                  <div><b>Lugar:</b> ${lugar}</div>
-                  <div><b>PAX:</b> ${pax} | <b>Equipaje:</b> ${equip}</div>
-                  <div style="color:#64748b; font-size:12px; margin-top:4px;">${fecha}</div>
+          const listItems = Object.values(ultimosReportesGlobal);
+          cargarUltimoPaxEquipaje();
+
+          const countBadge = document.getElementById('fleetCountBadge');
+          if (countBadge) {
+            countBadge.textContent = `⚓ ${listItems.length} embarcacion${listItems.length === 1 ? '' : 'es'}`;
+          }
+
+          if (!fleetListDiv) return;
+
+          if (listItems.length === 0) {
+            fleetListDiv.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">No hay reportes registrados.</div>';
+            return;
+          }
+
+          listItems.forEach(item => {
+            const keys = Object.keys(item);
+            const barco = item[keys.find(k => k.toLowerCase().includes('embarcacion'))] || 'Sin Nombre';
+            const estado = item[keys.find(k => k.toLowerCase().includes('estado'))] || 'N/A';
+            const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
+            const equip = item[keys.find(k => k.toLowerCase().includes('equipaje'))] || 0;
+            const lugar = item[keys.find(k => k.toLowerCase().includes('notas'))] || 'Sin ubicación';
+            const fecha = item[keys.find(k => k.toLowerCase().includes('fecha'))] || '';
+            const rawCoords = item[keys.find(k => k.toLowerCase().includes('coordenadas'))] || '';
+            const statusBadgeClass = getStatusBadgeClass(estado);
+
+            let lat = null, lng = null;
+            if (rawCoords && rawCoords.includes(',')) {
+              const parts = rawCoords.split(',');
+              const parsedLat = parseFloat(parts[0].trim());
+              const parsedLng = parseFloat(parts[1].trim());
+              // Validar que no sea 0,0 ni coordenadas inválidas
+              if (!isNaN(parsedLat) && !isNaN(parsedLng) && (Math.abs(parsedLat) > 0.001 || Math.abs(parsedLng) > 0.001) && Math.abs(parsedLat) <= 90 && Math.abs(parsedLng) <= 180) {
+                lat = parsedLat;
+                lng = parsedLng;
+              }
+            }
+
+            // Añadir opción al selector desplegable
+            if (selectorElem && barco !== 'Sin Nombre') {
+              const opt = document.createElement('option');
+              opt.value = barco;
+              const gpsNote = (lat !== null && lng !== null) ? '' : ' - (Sin GPS)';
+              opt.textContent = `🛥️ ${barco} (${estado})${gpsNote}`;
+              selectorElem.appendChild(opt);
+            }
+
+            if (map && lat !== null && lng !== null) {
+              const icon = L.divIcon({
+                className: 'fixed-dot',
+                html: '<span class="dot"></span>',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+              });
+
+              const marker = L.marker([lat, lng], { icon: icon, riseOnHover: true });
+
+              const popupText = `
+              <div class="map-popup-card">
+                <div class="map-popup-header">
+                  <span class="map-popup-title" title="${barco}">${barco}</span>
+                  <span class="status-badge ${statusBadgeClass}">${estado}</span>
                 </div>
+                <div class="map-popup-item"><b>Lugar:</b> ${lugar}</div>
+                <div class="map-popup-item"><b>Pasajeros:</b> ${pax} &bull; <b>Equipaje:</b> ${equip}</div>
+                <div class="map-popup-time">${fecha}</div>
               </div>
             `;
 
-            marker.bindPopup(popupText, { autoClose: false, closeOnClick: false, maxWidth: 260 });
-            markersGroup.addLayer(marker);
-            markersMap[barco] = { marker: marker, lat: lat, lng: lng };
-          }
+              marker.bindPopup(popupText, {
+                autoClose: false,
+                closeOnClick: false,
+                offset: [0, -16],
+                minWidth: 200,
+                maxWidth: 290
+              });
 
-          const card = document.createElement('div');
-          card.className = 'boat-card';
-          card.onclick = () => focusOnBoat(barco);
+              // Al hacer clic en el punto del mapa, enfocarse solo en este barco
+              marker.on('click', () => {
+                focusOnBoat(barco);
+              });
 
-          card.innerHTML = `
+              markersGroup.addLayer(marker);
+              markersMap[barco] = { marker: marker, lat: lat, lng: lng };
+            }
+
+            const card = document.createElement('div');
+            card.className = 'boat-card';
+            card.setAttribute('data-boat', barco);
+            card.onclick = () => focusOnBoat(barco);
+
+            const gpsIndicator = (lat !== null && lng !== null) ? '' : '<span style="color: #f59e0b; font-size: 0.75rem; margin-left: 6px;">📍 Sin GPS</span>';
+
+            card.innerHTML = `
             <button class="btn-delete" onclick="eliminarBarcoEvent(event, '${barco}')" title="Eliminar registros">🗑️</button>
             <div class="boat-header">
               <span class="boat-title">${barco}</span>
-              <span class="boat-status">${estado}</span>
+              <span class="status-badge ${statusBadgeClass}">${estado}</span>
             </div>
-            <div class="boat-place">Lugar: ${lugar}</div>
+            <div class="boat-place">Lugar: ${lugar}${gpsIndicator}</div>
             <div class="boat-info">
               <span><b>Pasajeros:</b> ${pax}</span>
               <span><b>Equipaje:</b> ${equip}</span>
             </div>
             <div class="boat-time">${fecha}</div>
           `;
-          fleetListDiv.appendChild(card);
-        });
-        // Ajustar vista para mostrar todos los marcadores si hay al menos uno
-        if (map && markersGroup && markersGroup.getLayers().length > 0) {
-          try {
-            const bounds = markersGroup.getBounds();
-            if (bounds.isValid()) {
-              map.fitBounds(bounds.pad(0.15), { padding: [40, 40] });
-            }
-          } catch (e) {
-            // ignore
-          }
-          // después de ajustar la vista actualizamos escala y apertura de popups
-          updatePopupScale();
-          updatePopupsOpenState();
-        }
-      }
-    });
-  }
+            fleetListDiv.appendChild(card);
+          });
 
-  function focusOnBoat(barco) {
-    if (markersMap[barco] && map) {
-      const target = markersMap[barco];
-      map.flyTo([target.lat, target.lng], 14, { duration: 1.2 });
-      target.marker.openPopup();
-      
-      if (window.innerWidth < 768) {
-        document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
+          // Al inicio desplegar la vista general con todos los barcos
+          showAllBoats();
+        }
+      });
+    }
+
+    // Enfocar un solo barco y cerrar todos los demás popups
+    function focusOnBoat(barco) {
+      if (!map) return;
+
+      if (barco === 'ALL') {
+        showAllBoats();
+        return;
+      }
+
+      // Actualizar selector desplegable
+      const selectorElem = document.getElementById('mapBoatSelector');
+      if (selectorElem) selectorElem.value = barco;
+
+      // Resaltar tarjeta correspondiente en la lista
+      document.querySelectorAll('.boat-card').forEach(c => c.classList.remove('active'));
+      const targetCard = document.querySelector(`.boat-card[data-boat="${barco}"]`);
+      if (targetCard) {
+        targetCard.classList.add('active');
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      // Cerrar todos los popups primero
+      Object.keys(markersMap).forEach(key => {
+        try {
+          markersMap[key].marker.closePopup();
+        } catch (e) { }
+      });
+
+      // Abrir únicamente el popup del barco seleccionado y volar hacia él
+      if (markersMap[barco]) {
+        const target = markersMap[barco];
+        map.flyTo([target.lat, target.lng], 14, { duration: 1.0 });
+        setTimeout(() => {
+          target.marker.openPopup();
+        }, 350);
+
+        if (window.innerWidth < 768) {
+          document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
+        }
+      } else {
+        // Notificar que este barco no tiene GPS
+        showStatus(`ℹ️ "${barco}" no tiene coordenadas GPS registradas en su último reporte.`, "info");
       }
     }
-  }
-</script>
+
+    // Mostrar todos los barcos con sus popups abiertos y encuadre general
+    function showAllBoats() {
+      if (!map) return;
+
+      const selectorElem = document.getElementById('mapBoatSelector');
+      if (selectorElem) selectorElem.value = 'ALL';
+
+      // Deseleccionar tarjetas de la lista
+      document.querySelectorAll('.boat-card').forEach(c => c.classList.remove('active'));
+
+      // Abrir todos los popups de los marcadores existentes
+      const validMarkers = Object.keys(markersMap);
+      validMarkers.forEach(key => {
+        try {
+          markersMap[key].marker.openPopup();
+        } catch (e) { }
+      });
+
+      // Ajustar encuadre a todos los marcadores con posición
+      if (markersGroup && validMarkers.length > 0) {
+        try {
+          const bounds = markersGroup.getBounds();
+          if (bounds.isValid()) {
+            if (validMarkers.length === 1) {
+              // Solo 1 barco con posición: zoom cómodo 13
+              const onlyTarget = markersMap[validMarkers[0]];
+              map.flyTo([onlyTarget.lat, onlyTarget.lng], 13, { duration: 1.0 });
+            } else {
+              // Múltiples barcos: ajustar límites con maxZoom y padding protegidos
+              map.fitBounds(bounds.pad(0.2), {
+                maxZoom: 14,
+                padding: [50, 50],
+                animate: true
+              });
+            }
+          } else {
+            map.setView([10.4000, -75.5300], 11);
+          }
+        } catch (e) {
+          map.setView([10.4000, -75.5300], 11);
+        }
+      } else {
+        // Si no hay barcos con GPS, vista por defecto de Cartagena
+        map.setView([10.4000, -75.5300], 11);
+      }
+      updatePopupScale();
+    }
+
+    // Manejador del selector desplegable
+    function onSelectBoatFilter(val) {
+      if (val === 'ALL') {
+        showAllBoats();
+      } else {
+        focusOnBoat(val);
+      }
+    }
+  </script>
 
 </body>
+
 </html>
