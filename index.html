@@ -10,6 +10,7 @@
   <style>
     :root {
       --bg: #0f172a;
+      --header-height: 84px;
       --card: #1e293b;
       --text: #f8fafc;
       --border: #334155;
@@ -297,9 +298,107 @@
       font-weight: 700;
       cursor: pointer;
     }
+
+    /* HEADER y FOOTER */
+    .site-header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px 20px;
+      margin: 0 auto 12px auto;
+      background: linear-gradient(90deg, rgba(56,189,248,0.06), rgba(2,132,199,0.04));
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(2,6,23,0.45);
+      position: static;
+      z-index: 10;
+      backdrop-filter: blur(6px);
+    }
+
+    .site-header img {
+      height: 64px;
+      width: auto;
+      border-radius: 10px;
+      display: block;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+    }
+
+    .site-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .site-brand .brand-name {
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: 0.6px;
+    }
+
+    .site-brand .brand-tag {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+
+    @media (max-width: 480px) {
+      .site-header img { height: 48px; }
+      .site-brand .brand-name { font-size: 1.05rem; }
+      .site-header { width: calc(100% - 24px); }
+    }
+
+    .site-footer {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 18px;
+      padding: 12px 14px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+    /* FIXED map marker (DOM) and fixed popup text size */
+    .fixed-dot .dot {
+      display: block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #38bdf8;
+      border: 1px solid #0284c7;
+      box-shadow: 0 1px 3px rgba(2,6,23,0.5);
+    }
+
+    /* For Leaflet popups, force fixed px font sizes so they don't visually change */
+    /* popup content scales with map zoom via --popup-scale */
+    .leaflet-container .leaflet-popup-content {
+      font-size: calc(13px * var(--popup-scale, 1)) !important;
+      line-height: 1.2 !important;
+      color: #0f172a !important;
+    }
+
+    .leaflet-container .leaflet-popup-content-wrapper {
+      padding: 6px 8px !important;
+      background: #f8fafc !important;
+      border-radius: 6px !important;
+      /* Width scales but has an absolute cap to avoid excessive growth */
+      max-width: min(calc(220px * var(--popup-scale, 1)), 360px) !important;
+    }
   </style>
 </head>
 <body>
+
+  <header class="site-header" role="banner">
+    <div class="site-brand">
+      <img src="images.jpg" alt="Colombia Navega logo" />
+      <div>
+        <div class="brand-name">Colombia Navega</div>
+        <div class="brand-tag">Control Flota Náutica</div>
+      </div>
+    </div>
+  </header>
 
 <div class="nav-tabs">
   <button class="tab-btn active" onclick="switchTab('reporteTab', this)">REPORTAR</button>
@@ -313,7 +412,7 @@
     <h2>Reporte Operativo</h2>
     <form id="fleetForm">
       
-      <label for="embarcacion">Embarcacion</label>
+      <label for="embarcacion">Embarcacion / Yate</label>
       <select id="embarcacion" onchange="cargarUltimoPaxEquipaje()" required>
         <option value="" disabled selected>Cargando lista...</option>
         <!-- Llenado automático desde Google Sheets -->
@@ -324,9 +423,12 @@
         <!-- Llenado automático desde Google Sheets -->
       </select>
 
+      <label for="notas">Lugar / Referencia</label>
+      <input type="text" id="notas" placeholder="Ej: Isla Grande / Cholon">
+
       <div class="grid-2">
         <div>
-          <label for="pasajeros">PAX</label>
+          <label for="pasajeros">Pasajeros</label>
           <input type="number" id="pasajeros" inputmode="numeric" placeholder="0">
         </div>
         <div>
@@ -337,11 +439,10 @@
 
       <label class="checkbox-container">
         <input type="checkbox" id="repetirPax" onchange="togglePaxEquipaje(this.checked)">
-        <span>Usar PAX y equipaje del reporte anterior</span>
+        <span>Usar Pasajeros y equipaje del reporte anterior</span>
       </label>
 
-      <label for="notas">Lugar / Referencia</label>
-      <input type="text" id="notas" placeholder="Ej: Rumbo a Isla Grande / Cholon">
+      
 
       <button type="button" class="btn-submit" onclick="enviarReporte()">ENVIAR REPORTE</button>
     </form>
@@ -364,6 +465,10 @@
 </div>
 
 <!-- Librerías JS -->
+  <footer class="site-footer">
+    <div>Colombia Navega &copy; <span id="year"></span></div>
+  </footer>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
@@ -540,6 +645,45 @@
 
     markersGroup = L.layerGroup().addTo(map);
     setTimeout(() => map.invalidateSize(), 300);
+
+    // Ajustes dinámicos de popups según zoom
+    map.on('zoomend', () => {
+      updatePopupScale();
+      updatePopupsOpenState();
+    });
+    // Inicializar escala y estado
+    updatePopupScale();
+  }
+
+  // Escala el tamaño del contenido de los popups según zoom
+  function updatePopupScale() {
+    if (!map) return;
+    const z = map.getZoom();
+    // Considerar también la cantidad de marcadores para reducir tamaño cuando hay muchos
+    const count = (markersGroup && markersGroup.getLayers) ? markersGroup.getLayers().length : Object.keys(markersMap).length;
+    const base = 1 + (z - 11) * 0.12; // escala basada en zoom
+    // factor de densidad: disminuye con la raíz cuadrada de la cantidad
+    const densityFactor = count <= 1 ? 1 : Math.max(0.35, Math.min(1, 3 / Math.sqrt(count)));
+    let rawScale = base * densityFactor;
+    // clamp to sensible bounds so popups never grow/shrink too much
+    const minScale = 0.45;
+    const maxScale = 1.15; // cap máximo para evitar que crezcan demasiado
+    let scale = Math.max(minScale, Math.min(rawScale, maxScale));
+    document.documentElement.style.setProperty('--popup-scale', scale);
+    // También ajustar variable de ancho relativa para cálculo en CSS
+    document.documentElement.style.setProperty('--popup-scale-raw', scale);
+  }
+
+  // Abre o cierra popups dependiendo del nivel de zoom
+  function updatePopupsOpenState() {
+    if (!map) return;
+    // Abrir todos los popups (su tamaño se ajusta por updatePopupScale)
+    Object.keys(markersMap).forEach(key => {
+      const entry = markersMap[key];
+      try {
+        entry.marker.openPopup();
+      } catch (e) {}
+    });
   }
 
   function cargarMapa() {
@@ -592,26 +736,31 @@
           }
 
           if (map && !isNaN(lat) && !isNaN(lng) && lat !== null) {
-            const circle = L.circleMarker([lat, lng], {
-              color: '#0284c7',
-              fillColor: '#38bdf8',
-              fillOpacity: 0.9,
-              radius: 9
+            // Crear marcador como un divIcon para que su tamaño sea fijo en píxeles
+            const icon = L.divIcon({
+              className: 'fixed-dot',
+              html: '<span class="dot"></span>',
+              iconSize: [12, 12],
+              iconAnchor: [6, 6]
             });
 
+            const marker = L.marker([lat, lng], { icon: icon });
+
             const popupText = `
-              <div style="color: #0f172a; font-family: sans-serif; padding: 4px;">
-                <b style="font-size: 1.1rem; color: #0284c7;">${barco}</b><br>
-                <b>Estado:</b> ${estado}<br>
-                <b>Lugar:</b> ${lugar}<br>
-                <b>PAX:</b> ${pax} | <b>Equipaje:</b> ${equip}<br>
-                <small style="color: #64748b;">${fecha}</small>
+              <div style="font-family: sans-serif; padding: 2px 0; color: #0f172a;">
+                <b style="font-size: 14px; color: #0284c7; display:block;">${barco}</b>
+                <div style="font-size:13px; color:#0f172a;">
+                  <div><b>Estado:</b> ${estado}</div>
+                  <div><b>Lugar:</b> ${lugar}</div>
+                  <div><b>PAX:</b> ${pax} | <b>Equipaje:</b> ${equip}</div>
+                  <div style="color:#64748b; font-size:12px; margin-top:4px;">${fecha}</div>
+                </div>
               </div>
             `;
 
-            circle.bindPopup(popupText);
-            markersGroup.addLayer(circle);
-            markersMap[barco] = { marker: circle, lat: lat, lng: lng };
+            marker.bindPopup(popupText, { autoClose: false, closeOnClick: false, maxWidth: 260 });
+            markersGroup.addLayer(marker);
+            markersMap[barco] = { marker: marker, lat: lat, lng: lng };
           }
 
           const card = document.createElement('div');
@@ -626,13 +775,27 @@
             </div>
             <div class="boat-place">Lugar: ${lugar}</div>
             <div class="boat-info">
-              <span><b>PAX:</b> ${pax}</span>
+              <span><b>Pasajeros:</b> ${pax}</span>
               <span><b>Equipaje:</b> ${equip}</span>
             </div>
             <div class="boat-time">${fecha}</div>
           `;
           fleetListDiv.appendChild(card);
         });
+        // Ajustar vista para mostrar todos los marcadores si hay al menos uno
+        if (map && markersGroup && markersGroup.getLayers().length > 0) {
+          try {
+            const bounds = markersGroup.getBounds();
+            if (bounds.isValid()) {
+              map.fitBounds(bounds.pad(0.15), { padding: [40, 40] });
+            }
+          } catch (e) {
+            // ignore
+          }
+          // después de ajustar la vista actualizamos escala y apertura de popups
+          updatePopupScale();
+          updatePopupsOpenState();
+        }
       }
     });
   }
