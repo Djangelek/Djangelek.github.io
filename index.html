@@ -194,15 +194,33 @@
       font-size: 1.05rem;
       font-weight: 800;
       cursor: pointer;
-      transition: opacity 0.2s ease, transform 0.1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s ease, transform 0.1s ease, background-color 0.2s ease;
     }
 
-    .btn-submit:hover {
+    .btn-submit:hover:not(:disabled) {
       opacity: 0.95;
     }
 
-    .btn-submit:active {
+    .btn-submit:active:not(:disabled) {
       transform: scale(0.99);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+      background-color: #334155;
+      color: #94a3b8;
+    }
+
+    .btn-refresh:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      border-color: var(--border);
     }
 
     #status {
@@ -761,7 +779,7 @@
 
 
 
-        <button type="button" class="btn-submit" onclick="enviarReporte()">ENVIAR REPORTE</button>
+        <button type="button" id="btnSubmit" class="btn-submit" onclick="enviarReporte()">ENVIAR REPORTE</button>
       </form>
       <div id="status"></div>
     </div>
@@ -776,7 +794,7 @@
         <select id="mapBoatSelector" class="map-selector" onchange="onSelectBoatFilter(this.value)">
           <option value="ALL">📍 Mostrar todos los barcos</option>
         </select>
-        <button class="btn-refresh" onclick="cargarMapa()">🔄 Actualizar Posiciones</button>
+        <button id="btnRefresh" class="btn-refresh" onclick="cargarMapa()">🔄 Actualizar Posiciones</button>
       </div>
 
       <div class="dashboard-layout">
@@ -801,9 +819,12 @@
     // NUEVA URL ACTUALIZADA
     const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwJXsV6GtjguGwutu_mQUq3WcsFIaUwZMJfr27Ub6C6yDkSX16f8F9lvant1QxUG00WnQ/exec";
 
-    // URLs conectadas a las pestañas
-    const CSV_SHEET_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=hoja%201";
-    const CONFIG_CSV_URL = "https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=Configuracion";
+    // URLs optimizadas mediante Google Visualization API (tq) para solicitar solo columnas requeridas
+    const CSV_QUERY = encodeURIComponent("SELECT A,B,C,D,E,F,G,H WHERE B IS NOT NULL");
+    const CSV_SHEET_URL = `https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=hoja%201&tq=${CSV_QUERY}`;
+
+    const CONFIG_QUERY = encodeURIComponent("SELECT A,B WHERE A IS NOT NULL OR B IS NOT NULL");
+    const CONFIG_CSV_URL = `https://docs.google.com/spreadsheets/d/1UKFOp1K8YFFE9VMLhTi3iJIH5rEHve-9ZWx_-Dke35s/gviz/tq?tqx=out:csv&sheet=Configuracion&tq=${CONFIG_QUERY}`;
 
     let map;
     let markersGroup;
@@ -871,6 +892,9 @@
               selectEstado.appendChild(opt);
             }
           });
+        },
+        error: function (err) {
+          console.error("Error al cargar configuración:", err);
         }
       });
     }
@@ -903,23 +927,42 @@
 
     function enviarReporte() {
       const barco = document.getElementById('embarcacion').value;
-      if (!barco) { showStatus("Selecciona una embarcacion.", "error"); return; }
+      const btn = document.getElementById('btnSubmit');
 
-      showStatus("Obteniendo posicion...", "info");
+      if (!barco) {
+        showStatus("Selecciona una embarcación.", "error");
+        return;
+      }
+
+      // Feedback visual inmediato y bloqueo para evitar dobles clics accidentales
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '🛰️ Obteniendo GPS...';
+      }
+      showStatus("Obteniendo precisión de GPS...", "info");
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (pos) => enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`, "insert"),
-          () => enviarAWebhook("Posicion no disponible", "insert"),
-          { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+          (pos) => {
+            if (btn) btn.innerHTML = '⏳ Enviando reporte...';
+            enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`, "insert");
+          },
+          (err) => {
+            console.warn("Geolocalización demorada o sin señal:", err);
+            if (btn) btn.innerHTML = '⏳ Enviando reporte...';
+            enviarAWebhook("Posicion no disponible", "insert");
+          },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
         );
       } else {
+        if (btn) btn.innerHTML = '⏳ Enviando reporte...';
         enviarAWebhook("Navegador sin soporte GPS", "insert");
       }
     }
 
     // Se reutiliza la función Fetch para Reportar o Borrar
     function enviarAWebhook(coordsOrData, action = "insert") {
+      const btn = document.getElementById('btnSubmit');
       showStatus("Procesando...", "info");
 
       let payload = {};
@@ -947,7 +990,7 @@
         body: JSON.stringify(payload)
       })
         .then(() => {
-          showStatus("COMPLETADO CON EXITO", "success");
+          showStatus("COMPLETADO CON ÉXITO", "success");
           if (action === "insert") {
             document.getElementById('fleetForm').reset();
             document.getElementById('repetirPax').checked = false;
@@ -955,7 +998,13 @@
           }
           setTimeout(() => cargarMapa(), 1500);
         })
-        .catch(() => showStatus("Error de red.", "error"));
+        .catch(() => showStatus("Error de red.", "error"))
+        .finally(() => {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'ENVIAR REPORTE';
+          }
+        });
     }
 
     function eliminarBarcoEvent(e, barcoNombre) {
@@ -1002,11 +1051,21 @@
     }
 
     function cargarMapa() {
+      const btnRefresh = document.getElementById('btnRefresh');
+      if (btnRefresh) {
+        btnRefresh.disabled = true;
+        btnRefresh.innerHTML = '⏳ Actualizando...';
+      }
+
       Papa.parse(CSV_SHEET_URL + "&t=" + new Date().getTime(), {
         download: true,
         header: true,
         skipEmptyLines: true,
         complete: function (results) {
+          if (btnRefresh) {
+            btnRefresh.disabled = false;
+            btnRefresh.innerHTML = '🔄 Actualizar Posiciones';
+          }
           if (markersGroup) markersGroup.clearLayers();
           for (let key in markersMap) delete markersMap[key];
 
@@ -1141,6 +1200,14 @@
 
           // Al inicio desplegar la vista general con todos los barcos
           showAllBoats();
+        },
+        error: function(err) {
+          console.error("Error al descargar datos del mapa:", err);
+          if (btnRefresh) {
+            btnRefresh.disabled = false;
+            btnRefresh.innerHTML = '🔄 Actualizar Posiciones';
+          }
+          showStatus("Error al cargar datos del mapa.", "error");
         }
       });
     }
