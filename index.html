@@ -2153,7 +2153,6 @@
               // ── Extraer última bitácora para este barco (en PC) ──
               const bitacora = ultimasBitacorasGlobal[barco];
               let bitacoraHTML = '';
-              let bitacoraPopupHTML = '';
 
               if (bitacora) {
                 const bKeys = Object.keys(bitacora);
@@ -2166,16 +2165,11 @@
                 bitacoraHTML = `
                 <div class="boat-bitacora-box">
                   <div class="bitacora-header">📋 Última Bitácora</div>
-                  <div class="boat-bitacora-item"><b>Capitán:</b> ${capitan} &bull; <b>Combustible:</b> ${combustible}</div>
+                  <div class="boat-bitacora-item"><b>Capitán:</b> ${capitan}</div>
+                  <div class="boat-bitacora-item"><b>Combustible:</b> ${combustible}</div>
                   <div class="boat-bitacora-item"><b>Marineros:</b> ${marineros}</div>
                   <div class="boat-bitacora-item"><b>Ruta:</b> ${ruta}</div>
                   <div class="boat-time">Enviado: ${fechaBit}</div>
-                </div>`;
-
-                bitacoraPopupHTML = `
-                <div class="map-popup-item" style="margin-top:6px; padding-top:4px; border-top:1px dashed #334155;">
-                  <b>📋 Bitácora:</b> Capt. ${capitan} | Combustible: ${combustible}<br>
-                  <small><b>Ruta:</b> ${ruta}</small>
                 </div>`;
               }
 
@@ -2209,11 +2203,10 @@
                   </div>
                   <div class="map-popup-item"><b>Lugar:</b> ${lugar}</div>
                   <div class="map-popup-item"><b>Pax:</b> ${pax} &bull; <b>Maletas:</b> ${maletas} &bull; <b>Bolsos:</b> ${bolsos}</div>
-                  ${bitacoraPopupHTML}
                   <div class="map-popup-time">${fecha}</div>
                 </div>`;
 
-                marker.bindPopup(popupText, { autoClose: false, closeOnClick: false, offset: [0, -16], minWidth: 200, maxWidth: 290 });
+                marker.bindPopup(popupText, { autoClose: false, closeOnClick: false, offset: [0, -3], minWidth: 200, maxWidth: 290 });
                 marker.on('click', () => focusOnBoat(barco));
                 markersGroup.addLayer(marker);
                 markersMap[barco] = { marker: marker, lat: lat, lng: lng };
