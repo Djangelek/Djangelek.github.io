@@ -1175,7 +1175,7 @@
       <form id="fleetForm">
 
         <label for="embarcacion">Embarcacion / Yate</label>
-        <select id="embarcacion" onchange="cargarUltimoPaxEquipaje()" required>
+        <select id="embarcacion" onchange="cargarUltimoPaxMaletasBolsos()" required>
           <option value="" disabled selected>Seleccione embarcación...</option>
         </select>
 
@@ -1201,7 +1201,7 @@
         </div>
 
         <label class="checkbox-container">
-          <input type="checkbox" id="repetirPax" onchange="togglePaxEquipaje(this.checked)">
+          <input type="checkbox" id="repetirPax" onchange="togglePaxMaletasBolsos(this.checked)">
           <span>Usar Pasajeros, maletas y bolsos del reporte anterior</span>
         </label>
 
@@ -1682,7 +1682,7 @@
       }
     });
 
-    function togglePaxEquipaje(checked) {
+    function togglePaxMaletasBolsos(checked) {
       const inputPax = document.getElementById('pasajeros');
       const inputMaletas = document.getElementById('maletas');
       const inputBolsos = document.getElementById('bolsos');
@@ -1711,16 +1711,16 @@
                   ultimosReportesGlobal[row[barcoKey].trim()] = row;
                 }
               });
-              cargarUltimoPaxEquipaje();
+              cargarUltimoPaxMaletasBolsos();
             }
           });
         } else {
-          cargarUltimoPaxEquipaje();
+          cargarUltimoPaxMaletasBolsos();
         }
       }
     }
 
-    function cargarUltimoPaxEquipaje() {
+    function cargarUltimoPaxMaletasBolsos() {
       const barco = document.getElementById('embarcacion').value;
       const checkbox = document.getElementById('repetirPax');
 
@@ -1728,7 +1728,7 @@
         const item = ultimosReportesGlobal[barco];
         const keys = Object.keys(item);
         document.getElementById('pasajeros').value = item[keys.find(k => k && k.toLowerCase().includes('pasajeros'))] || 0;
-        document.getElementById('maletas').value = item[keys.find(k => k && (k.toLowerCase().includes('maletas') || k.toLowerCase().includes('equipaje')))] || 0;
+        document.getElementById('maletas').value = item[keys.find(k => k && k.toLowerCase().includes('maletas'))] || 0;
         document.getElementById('bolsos').value = item[keys.find(k => k && k.toLowerCase().includes('bolsos'))] || 0;
       }
     }
@@ -1799,10 +1799,7 @@
     }
 
     // =========================================================================
-    // NUEVA FUNCIÓN PARA ENVIAR BITÁCORA (Con GPS y doble envío automático)
-    // =========================================================================
-    // =========================================================================
-    // NUEVA FUNCIÓN PARA ENVIAR BITÁCORA (Con GPS y doble envío automático)
+    // FUNCIÓN ÚNICA PARA ENVIAR BITÁCORA (Con GPS y doble envío automático)
     // =========================================================================
     function enviarBitacora() {
       const barco = document.getElementById('bitBarco').value;
@@ -1853,7 +1850,7 @@
         { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
       );
 
-      // Función asíncrona interna para lanzar los dos Webhooks
+      // Función interna para procesar el envío de ambos registros
       async function ejecutarEnvioDoble(coords) {
         if (btn) { btn.innerHTML = '⏳ Guardando registros...'; }
         showStatusBit('Enviando Bitácora y Reporte Náutico...', 'info');
@@ -1864,7 +1861,7 @@
           return;
         }
 
-        // 1. Objeto de la Bitácora (SIN COORDENADAS para no desajustar las columnas en tu base de datos)
+        // 1. Objeto de la Bitácora (Estructura propia de bitácoras)
         const payloadBitacora = {
           action: 'bitacora',
           barco: barco,
@@ -1873,25 +1870,25 @@
           ruta: ruta,
           pasajeros: pax,
           combustible: combustible + '%',
-          fecha: fecha
+          fecha: fecha,
+          coordenadas: coords
         };
 
-        // 2. Objeto del Reporte Normal (Aquí SÍ enviamos el GPS y el lugar exacto)
+        // 2. Objeto del Reporte Normal 
+        // Orden estricto para que coincida exactamente con las columnas de Google Sheets
         const payloadReporteAutomatico = {
           action: "insert",
           embarcacion: barco,
           estado: "⚓ Bitácora Registrada",
           pasajeros: pax,
           maletas: 0,
-          equipaje: 0,
           bolsos: 0,
-          coordenadas: coords, // Solo el reporte normal recibe el GPS
-          notas: "Club Náutico De Cartagena" // Nombre del lugar por defecto forzado
+          coordenadas: coords,                   // 📍 Columna G: Coordenadas GPS reales
+          notas: "Club Náutico De Cartagena"     // 📍 Columna I: Lugar por defecto fijo
         };
 
         try {
           if (navigator.onLine) {
-            // Se envían ambos payloads al mismo tiempo al Google Sheet
             await Promise.all([
               fetch(WEBHOOK_URL, {
                 method: 'POST', mode: 'no-cors',
@@ -1907,12 +1904,10 @@
 
             showStatusBit('✅ Bitácora y Reporte generados con éxito', 'success');
 
-            // Actualizar mapa global para que el marcador con pasajeros aparezca de inmediato
             if (typeof cargarMapa === "function" && document.getElementById('dashboardTab').classList.contains('active')) {
               setTimeout(() => cargarMapa(), 1500);
             }
           } else {
-            // Manejo Offline: guardamos ambos en IndexedDB local
             await guardarReportePendiente(payloadBitacora);
             await guardarReportePendiente(payloadReporteAutomatico);
             await registrarSync();
@@ -1920,7 +1915,7 @@
             actualizarBannerOffline();
           }
 
-          // Reiniciar el formulario visual
+          // Reiniciar formulario visual
           document.getElementById('bitacoraForm').reset();
           document.getElementById('bitCombustibleRange').value = 100;
           actualizarBarraCombustible(100);
@@ -1939,95 +1934,6 @@
         } finally {
           if (btn) { btn.disabled = false; btn.innerHTML = '📋 CHECK BITÁCORA'; }
         }
-      }
-    }
-
-    // Función asíncrona interna para lanzar los dos Webhooks
-    async function ejecutarEnvioDoble(coords) {
-      if (btn) { btn.innerHTML = '⏳ Guardando registros...'; }
-      showStatusBit('Enviando Bitácora y Reporte Náutico...', 'info');
-
-      if (typeof WEBHOOK_URL === 'undefined') {
-        showStatusBit('Falta configurar la URL del Webhook.', 'error');
-        if (btn) { btn.disabled = false; btn.innerHTML = '📋 CHECK BITÁCORA'; }
-        return;
-      }
-
-      // 1. Objeto de la Bitácora (se añade GPS)
-      const payloadBitacora = {
-        action: 'bitacora',
-        barco: barco,
-        capitan: capitan,
-        marineros: marineros,
-        ruta: ruta,
-        pasajeros: pax,
-        combustible: combustible + '%',
-        fecha: fecha,
-        coordenadas: coords
-      };
-
-      // 2. Objeto del Reporte Normal (Se fuerza el lugar y se copian pasajeros/barco)
-      const payloadReporteAutomatico = {
-        action: "insert",
-        embarcacion: barco,
-        estado: "⚓ Bitácora Registrada", // Sirve para identificarlo en la tabla
-        pasajeros: pax,
-        maletas: 0,
-        equipaje: 0,
-        bolsos: 0,
-        coordenadas: coords,
-        notas: "Club nautico" // Requisito solicitado
-      };
-
-      try {
-        if (navigator.onLine) {
-          // Se envían ambos payloads al mismo tiempo al Google Sheet
-          await Promise.all([
-            fetch(WEBHOOK_URL, {
-              method: 'POST', mode: 'no-cors',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payloadBitacora)
-            }),
-            fetch(WEBHOOK_URL, {
-              method: 'POST', mode: 'no-cors',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payloadReporteAutomatico)
-            })
-          ]);
-
-          showStatusBit('✅ Bitácora y Reporte generados con éxito', 'success');
-
-          // Actualizar mapa global para que el marcador con pasajeros aparezca de inmediato
-          if (typeof cargarMapa === "function" && document.getElementById('dashboardTab').classList.contains('active')) {
-            setTimeout(() => cargarMapa(), 1500);
-          }
-        } else {
-          // Manejo Offline: guardamos ambos en IndexedDB local
-          await guardarReportePendiente(payloadBitacora);
-          await guardarReportePendiente(payloadReporteAutomatico);
-          await registrarSync();
-          showStatusBit('📡 Sin conexión — Guardados. Se enviarán al reconectarse.', 'info');
-          actualizarBannerOffline();
-        }
-
-        // Reiniciar el formulario visual
-        document.getElementById('bitacoraForm').reset();
-        document.getElementById('bitCombustibleRange').value = 100;
-        actualizarBarraCombustible(100);
-        const fechaEl = document.getElementById('bitFecha');
-        if (fechaEl) {
-          const now = new Date();
-          fechaEl.value = now.toLocaleDateString('es-CO', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-          });
-        }
-
-      } catch (error) {
-        console.error("Error en envío doble de bitácora:", error);
-        showStatusBit('❌ Error de red o al guardar. Intenta de nuevo.', 'error');
-      } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '📋 CHECK BITÁCORA'; }
       }
     }
 
@@ -2052,7 +1958,6 @@
           estado: document.getElementById('estado').value,
           pasajeros: document.getElementById('pasajeros').value || 0,
           maletas: maletasVal,
-          equipaje: maletasVal,
           bolsos: document.getElementById('bolsos').value || 0,
           coordenadas: coordsOrData,
           notas: document.getElementById('notas').value
@@ -2078,7 +1983,7 @@
           if (action === "insert") {
             document.getElementById('fleetForm').reset();
             document.getElementById('repetirPax').checked = false;
-            togglePaxEquipaje(false);
+            togglePaxMaletasBolsos(false);
           }
           if (typeof cargarMapa === "function" && document.getElementById('dashboardTab').classList.contains('active')) {
             setTimeout(() => cargarMapa(), 1500);
@@ -2092,7 +1997,7 @@
               showStatus('📡 Sin conexión — Reporte guardado. Se enviará automáticamente al reconectarse.', 'info');
               document.getElementById('fleetForm').reset();
               document.getElementById('repetirPax').checked = false;
-              togglePaxEquipaje(false);
+              togglePaxMaletasBolsos(false);
             } catch (dbErr) {
               console.error('[App] Error guardando en IndexedDB:', dbErr);
               showStatus('❌ Error de red y no se pudo guardar offline. Intenta nuevamente.', 'error');
@@ -2221,7 +2126,7 @@
             });
 
             const listItems = Object.values(ultimosReportesGlobal);
-            cargarUltimoPaxEquipaje();
+            cargarUltimoPaxMaletasBolsos();
 
             const countBadge = document.getElementById('fleetCountBadge');
             if (countBadge) countBadge.textContent = `⚓ ${listItems.length} embarcacion${listItems.length === 1 ? '' : 'es'}`;
@@ -2238,7 +2143,7 @@
               const barco = item[keys.find(k => k && k.toLowerCase().includes('embarcacion'))] || 'Sin Nombre';
               const estado = item[keys.find(k => k && k.toLowerCase().includes('estado'))] || 'N/A';
               const pax = item[keys.find(k => k && k.toLowerCase().includes('pasajeros'))] || 0;
-              const maletas = item[keys.find(k => k && (k.toLowerCase().includes('maletas') || k.toLowerCase().includes('equipaje')))] || 0;
+              const maletas = item[keys.find(k => k && k.toLowerCase().includes('maletas'))] || 0;
               const bolsos = item[keys.find(k => k && k.toLowerCase().includes('bolsos'))] || 0;
               const lugar = item[keys.find(k => k && k.toLowerCase().includes('notas'))] || 'Sin ubicación';
               const fecha = item[keys.find(k => k && k.toLowerCase().includes('fecha'))] || '';
