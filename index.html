@@ -1801,6 +1801,9 @@
     // =========================================================================
     // NUEVA FUNCIÓN PARA ENVIAR BITÁCORA (Con GPS y doble envío automático)
     // =========================================================================
+    // =========================================================================
+    // NUEVA FUNCIÓN PARA ENVIAR BITÁCORA (Con GPS y doble envío automático)
+    // =========================================================================
     function enviarBitacora() {
       const barco = document.getElementById('bitBarco').value;
       const btn = document.getElementById('btnBitSubmit');
@@ -1818,7 +1821,7 @@
       const fecha = document.getElementById('bitFecha').value;
 
       if (btn) { btn.disabled = true; btn.innerHTML = '🛰️ Obteniendo GPS...'; }
-      showStatusBit('Obteniendo ubicación de Bitácora...', 'info');
+      showStatusBit('Obteniendo ubicación para el reporte automático...', 'info');
 
       if (!navigator.geolocation) {
         ejecutarEnvioDoble("Navegador sin soporte GPS");
@@ -1861,7 +1864,7 @@
           return;
         }
 
-        // 1. Objeto de la Bitácora (se añade GPS)
+        // 1. Objeto de la Bitácora (SIN COORDENADAS para no desajustar las columnas en tu base de datos)
         const payloadBitacora = {
           action: 'bitacora',
           barco: barco,
@@ -1870,21 +1873,20 @@
           ruta: ruta,
           pasajeros: pax,
           combustible: combustible + '%',
-          fecha: fecha,
-          coordenadas: coords
+          fecha: fecha
         };
 
-        // 2. Objeto del Reporte Normal (Se fuerza el lugar y se copian pasajeros/barco)
+        // 2. Objeto del Reporte Normal (Aquí SÍ enviamos el GPS y el lugar exacto)
         const payloadReporteAutomatico = {
           action: "insert",
           embarcacion: barco,
-          estado: "⚓ Bitácora Registrada", // Sirve para identificarlo en la tabla
+          estado: "⚓ Bitácora Registrada",
           pasajeros: pax,
           maletas: 0,
           equipaje: 0,
           bolsos: 0,
-          coordenadas: coords,
-          notas: "Club nautico" // Requisito solicitado
+          coordenadas: coords, // Solo el reporte normal recibe el GPS
+          notas: "Club Náutico De Cartagena" // Nombre del lugar por defecto forzado
         };
 
         try {
@@ -1938,6 +1940,96 @@
           if (btn) { btn.disabled = false; btn.innerHTML = '📋 CHECK BITÁCORA'; }
         }
       }
+    }
+
+    // Función asíncrona interna para lanzar los dos Webhooks
+    async function ejecutarEnvioDoble(coords) {
+      if (btn) { btn.innerHTML = '⏳ Guardando registros...'; }
+      showStatusBit('Enviando Bitácora y Reporte Náutico...', 'info');
+
+      if (typeof WEBHOOK_URL === 'undefined') {
+        showStatusBit('Falta configurar la URL del Webhook.', 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = '📋 CHECK BITÁCORA'; }
+        return;
+      }
+
+      // 1. Objeto de la Bitácora (se añade GPS)
+      const payloadBitacora = {
+        action: 'bitacora',
+        barco: barco,
+        capitan: capitan,
+        marineros: marineros,
+        ruta: ruta,
+        pasajeros: pax,
+        combustible: combustible + '%',
+        fecha: fecha,
+        coordenadas: coords
+      };
+
+      // 2. Objeto del Reporte Normal (Se fuerza el lugar y se copian pasajeros/barco)
+      const payloadReporteAutomatico = {
+        action: "insert",
+        embarcacion: barco,
+        estado: "⚓ Bitácora Registrada", // Sirve para identificarlo en la tabla
+        pasajeros: pax,
+        maletas: 0,
+        equipaje: 0,
+        bolsos: 0,
+        coordenadas: coords,
+        notas: "Club nautico" // Requisito solicitado
+      };
+
+      try {
+        if (navigator.onLine) {
+          // Se envían ambos payloads al mismo tiempo al Google Sheet
+          await Promise.all([
+            fetch(WEBHOOK_URL, {
+              method: 'POST', mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payloadBitacora)
+            }),
+            fetch(WEBHOOK_URL, {
+              method: 'POST', mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payloadReporteAutomatico)
+            })
+          ]);
+
+          showStatusBit('✅ Bitácora y Reporte generados con éxito', 'success');
+
+          // Actualizar mapa global para que el marcador con pasajeros aparezca de inmediato
+          if (typeof cargarMapa === "function" && document.getElementById('dashboardTab').classList.contains('active')) {
+            setTimeout(() => cargarMapa(), 1500);
+          }
+        } else {
+          // Manejo Offline: guardamos ambos en IndexedDB local
+          await guardarReportePendiente(payloadBitacora);
+          await guardarReportePendiente(payloadReporteAutomatico);
+          await registrarSync();
+          showStatusBit('📡 Sin conexión — Guardados. Se enviarán al reconectarse.', 'info');
+          actualizarBannerOffline();
+        }
+
+        // Reiniciar el formulario visual
+        document.getElementById('bitacoraForm').reset();
+        document.getElementById('bitCombustibleRange').value = 100;
+        actualizarBarraCombustible(100);
+        const fechaEl = document.getElementById('bitFecha');
+        if (fechaEl) {
+          const now = new Date();
+          fechaEl.value = now.toLocaleDateString('es-CO', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          });
+        }
+
+      } catch (error) {
+        console.error("Error en envío doble de bitácora:", error);
+        showStatusBit('❌ Error de red o al guardar. Intenta de nuevo.', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '📋 CHECK BITÁCORA'; }
+      }
+    }
     }
 
     function showStatusBit(msg, type) {
