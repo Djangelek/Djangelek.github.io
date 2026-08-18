@@ -1,18 +1,15 @@
 {
-  "name": "Colombia Navega — Control Flota Náutica",
-  "short_name": "ColNavega",
-  "description": "Control y seguimiento en tiempo real de la flota náutica de Cartagena.",
-  "start_url": "/",
+  "name": "Control Flota Náutica - Cartagena",
+  "short_name": "Flota Náutica",
+  "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#0f172a",
   "theme_color": "#38bdf8",
   "icons": [
     {
       "src": "images.webp",
-      "sizes": "any",
-      "type": "image/webp",
-      "purpose": "any maskable"
+      "sizes": "192x192 512x512",
+      "type": "image/webp"
     }
   ]
 }

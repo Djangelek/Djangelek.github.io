@@ -93,6 +93,7 @@
       border-radius: 8px;
       cursor: pointer;
       font-size: 0.95rem;
+      text-align: center;
       transition: background 0.2s ease, color 0.2s ease;
     }
 
@@ -536,6 +537,32 @@
       font-size: 0.75rem;
       color: #64748b;
       margin-top: 4px;
+    }
+
+    /* ESTILOS BITÁCORA EN TARJETA DE BOTE (PC) */
+    .boat-bitacora-box {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .boat-bitacora-box .bitacora-header {
+      font-weight: 800;
+      color: var(--primary);
+      font-size: 0.82rem;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .boat-bitacora-item {
+      margin-bottom: 2px;
+      line-height: 1.3;
     }
 
     .btn-delete {
@@ -1001,24 +1028,111 @@
     }
 
     @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     #offlineBanner.banner-offline {
-      background: linear-gradient(135deg, rgba(127,29,29,0.85), rgba(153,27,27,0.7));
+      background: linear-gradient(135deg, rgba(127, 29, 29, 0.85), rgba(153, 27, 27, 0.7));
       color: #fca5a5;
-      border: 1px solid rgba(248,113,113,0.4);
-      box-shadow: 0 2px 12px rgba(239,68,68,0.2);
+      border: 1px solid rgba(248, 113, 113, 0.4);
+      box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2);
       display: block;
     }
 
     #offlineBanner.banner-pending {
-      background: linear-gradient(135deg, rgba(12,74,110,0.85), rgba(7,89,133,0.7));
+      background: linear-gradient(135deg, rgba(12, 74, 110, 0.85), rgba(7, 89, 133, 0.7));
       color: #7dd3fc;
-      border: 1px solid rgba(56,189,248,0.35);
-      box-shadow: 0 2px 12px rgba(56,189,248,0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      box-shadow: 0 2px 12px rgba(56, 189, 248, 0.15);
       display: block;
+    }
+
+    /* ── TABS RESPONSIVE (móvil vs PC) ─────────────────────── */
+    .tab-btn--mobile-only {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .tab-btn--mobile-only {
+        display: flex;
+        flex: 1;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      .tab-btn--desktop-only {
+        display: none;
+      }
+
+      #dashboardTab,
+      #map,
+      .dashboard-controls {
+        display: none !important;
+      }
+    }
+
+    /* ── FORMULARIO BITÁCORA ─────────────────────────────────── */
+    #bitacoraTab form {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    .fuel-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .fuel-bar-track {
+      flex: 1;
+      height: 12px;
+      background: var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .fuel-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.25s ease, background 0.25s ease;
+    }
+
+    .fuel-pct-label {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--primary);
+      min-width: 48px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    #statusBit {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 800;
+      text-align: center;
+      font-size: 0.95rem;
+      display: none;
+      max-width: 620px;
+      margin-left: auto;
+      margin-right: auto;
     }
   </style>
 </head>
@@ -1047,8 +1161,10 @@
   </header>
 
   <div class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('reporteTab', this)">REPORTAR</button>
-    <button class="tab-btn" onclick="switchTab('dashboardTab', this)">MAPA NÁUTICO</button>
+    <button class="tab-btn tab-btn--desktop-only active" onclick="switchTab('reporteTab', this)">REPORTAR</button>
+    <button class="tab-btn tab-btn--desktop-only" onclick="switchTab('dashboardTab', this)">MAPA NÁUTICO</button>
+    <button class="tab-btn tab-btn--mobile-only active" onclick="switchTab('reporteTab', this)">⚓ ESTADO</button>
+    <button class="tab-btn tab-btn--mobile-only" onclick="switchTab('bitacoraTab', this)">📋 BITÁCORA</button>
   </div>
 
   <div class="container">
@@ -1091,12 +1207,51 @@
 
         <button type="button" id="btnSubmit" class="btn-submit" onclick="enviarReporte()">ENVIAR REPORTE</button>
       </form>
-      <!-- Banner de estado offline / reportes pendientes -->
       <div id="offlineBanner"></div>
       <div id="status"></div>
     </div>
 
-    <!-- DASHBOARD MAPA -->
+    <!-- FORMULARIO BITÁCORA -->
+    <div id="bitacoraTab" class="tab-content">
+      <h2>📋 Check Bitácora</h2>
+      <form id="bitacoraForm">
+
+        <label for="bitFecha">Fecha</label>
+        <input type="text" id="bitFecha" readonly style="opacity: 0.7; cursor: not-allowed; font-size: 0.9rem;">
+
+        <label for="bitBarco">Barco</label>
+        <select id="bitBarco" required>
+          <option value="" disabled selected>Selecciona barco...</option>
+        </select>
+
+        <label for="bitCapitan">Capitán encargado</label>
+        <input type="text" id="bitCapitan" placeholder="Nombre del capitán">
+
+        <label for="bitMarineros">Marineros</label>
+        <input type="text" id="bitMarineros" placeholder="Ej: Pedro, Juan, Carlos">
+
+        <label for="bitRuta">Ruta</label>
+        <input type="text" id="bitRuta" placeholder="Ej: Cartagena → Isla Grande">
+
+        <label for="bitPax">Nro de pasajeros</label>
+        <input type="number" id="bitPax" inputmode="numeric" placeholder="0" min="0">
+
+        <label>Nivel de combustible</label>
+        <input type="range" id="bitCombustibleRange" min="0" max="100" step="5" value="100"
+          oninput="actualizarBarraCombustible(this.value)">
+        <div class="fuel-row">
+          <div class="fuel-bar-track">
+            <div class="fuel-bar-fill" id="bitFuelFill" style="width:100%; background:#22c55e;"></div>
+          </div>
+          <span class="fuel-pct-label" id="bitFuelPct">100%</span>
+        </div>
+
+        <button type="button" id="btnBitSubmit" class="btn-submit" onclick="enviarBitacora()">📋 CHECK BITÁCORA</button>
+      </form>
+      <div id="statusBit"></div>
+    </div>
+
+    <!-- DASHBOARD MAPA (SOLO PC) -->
     <div id="dashboardTab" class="tab-content">
       <div class="dashboard-header">
         <h2>Radar & Estado de Flota</h2>
@@ -1199,15 +1354,14 @@
     document.getElementById('year').textContent = new Date().getFullYear();
 
     // =============== INICIALIZACIÓN SÍNCRONA RÁPIDA ===============
-    // Llama directamente a la función declarada en api_config.js
     let activeConfig = window.obtenerConfiguracion ? window.obtenerConfiguracion() : { barcos: [], estados: [] };
 
     let map;
     let markersGroup;
     const markersMap = {};
     let ultimosReportesGlobal = {};
+    let ultimasBitacorasGlobal = {};
 
-    // Carga los desplegables de inmediato para que el usuario no espere nada
     renderConfigSelects();
 
     function renderConfigSelects() {
@@ -1244,8 +1398,23 @@
           }
         });
       }
+
+      // Sincronizar selector de barco en formulario de Bitácora
+      const selectBitBarco = document.getElementById('bitBarco');
+      if (selectBitBarco) {
+        selectBitBarco.innerHTML = '<option value="" disabled selected>Selecciona barco...</option>';
+        if (activeConfig.barcos) {
+          activeConfig.barcos.forEach(barco => {
+            if (barco && barco.trim() !== '') {
+              const opt = document.createElement('option');
+              opt.value = barco.trim();
+              opt.textContent = barco.trim();
+              selectBitBarco.appendChild(opt);
+            }
+          });
+        }
+      }
     }
-    // ==============================================================
 
     function getStatusBadgeClass(estado) {
       if (!estado) return 'status-default';
@@ -1268,7 +1437,22 @@
       document.getElementById(tabId).classList.add('active');
       btn.classList.add('active');
 
+      if (tabId === 'bitacoraTab') {
+        const fechaEl = document.getElementById('bitFecha');
+        if (fechaEl) {
+          const now = new Date();
+          fechaEl.value = now.toLocaleDateString('es-CO', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          });
+        }
+        return;
+      }
+
       if (tabId === 'dashboardTab') {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) return; // En móvil no se ejecuta mapa ni radar
+
         setTimeout(() => {
           if (typeof L === 'undefined' || typeof Papa === 'undefined') {
             showStatus("Cargando librerías del mapa... Intenta de nuevo en unos segundos.", "info");
@@ -1454,7 +1638,6 @@
 
     function resetToDefaultConfig() {
       if (confirm('¿Restablecer los barcos y estados por defecto? (Se borrarán tus cambios)')) {
-        // Se resetea desde la variable global si api_config.js está bien cargado
         tempModalConfig = typeof DEFAULT_CONFIG !== 'undefined' ? JSON.parse(JSON.stringify(DEFAULT_CONFIG)) : { barcos: [], estados: [] };
         renderModalConfigLists();
         updateJsonEditor();
@@ -1523,7 +1706,7 @@
             complete: function (results) {
               results.data.forEach(row => {
                 const keys = Object.keys(row);
-                const barcoKey = keys.find(k => k.toLowerCase().includes('embarcacion'));
+                const barcoKey = keys.find(k => k && k.toLowerCase().includes('embarcacion'));
                 if (barcoKey && row[barcoKey] && row[barcoKey].trim() !== '') {
                   ultimosReportesGlobal[row[barcoKey].trim()] = row;
                 }
@@ -1544,9 +1727,9 @@
       if (checkbox.checked && barco && ultimosReportesGlobal[barco]) {
         const item = ultimosReportesGlobal[barco];
         const keys = Object.keys(item);
-        document.getElementById('pasajeros').value = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
-        document.getElementById('maletas').value = item[keys.find(k => k.toLowerCase().includes('maletas') || k.toLowerCase().includes('equipaje'))] || 0;
-        document.getElementById('bolsos').value = item[keys.find(k => k.toLowerCase().includes('bolsos'))] || 0;
+        document.getElementById('pasajeros').value = item[keys.find(k => k && k.toLowerCase().includes('pasajeros'))] || 0;
+        document.getElementById('maletas').value = item[keys.find(k => k && (k.toLowerCase().includes('maletas') || k.toLowerCase().includes('equipaje')))] || 0;
+        document.getElementById('bolsos').value = item[keys.find(k => k && k.toLowerCase().includes('bolsos'))] || 0;
       }
     }
 
@@ -1565,23 +1748,203 @@
       }
       showStatus("Obteniendo precisión de GPS...", "info");
 
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            if (btn) btn.innerHTML = '⏳ Enviando reporte...';
-            enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`, "insert");
-          },
-          (err) => {
-            console.warn("GPS no disponible:", err);
-            if (btn) btn.innerHTML = '⏳ Enviando reporte...';
-            enviarAWebhook("Posicion no disponible", "insert");
-          },
-          { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
-        );
-      } else {
+      if (!navigator.geolocation) {
         if (btn) btn.innerHTML = '⏳ Enviando reporte...';
         enviarAWebhook("Navegador sin soporte GPS", "insert");
+        return;
       }
+
+      let gpsFinalizado = false;
+
+      // Límite de 4 segundos para PC
+      const gpsTimeoutTimer = setTimeout(() => {
+        if (!gpsFinalizado) {
+          gpsFinalizado = true;
+          console.warn("GPS no respondió a tiempo (PC Timeout). Enviando sin coordenadas.");
+          if (btn) btn.innerHTML = '⏳ Enviando reporte...';
+          enviarAWebhook("Posicion no disponible (Timeout GPS)", "insert");
+        }
+      }, 4000);
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (gpsFinalizado) return;
+          gpsFinalizado = true;
+          clearTimeout(gpsTimeoutTimer);
+          if (btn) btn.innerHTML = '⏳ Enviando reporte...';
+          enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`, "insert");
+        },
+        (err) => {
+          if (gpsFinalizado) return;
+          gpsFinalizado = true;
+          clearTimeout(gpsTimeoutTimer);
+          console.warn("GPS no disponible:", err);
+          if (btn) btn.innerHTML = '⏳ Enviando reporte...';
+          enviarAWebhook("Posicion no disponible", "insert");
+        },
+        { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+      );
+    }
+
+    function actualizarBarraCombustible(val) {
+      const fill = document.getElementById('bitFuelFill');
+      const label = document.getElementById('bitFuelPct');
+      if (!fill || !label) return;
+      const pct = parseInt(val);
+      fill.style.width = pct + '%';
+      label.textContent = pct + '%';
+      if (pct < 25) fill.style.background = '#ef4444';
+      else if (pct < 50) fill.style.background = '#f59e0b';
+      else fill.style.background = '#22c55e';
+    }
+
+    // =========================================================================
+    // NUEVA FUNCIÓN PARA ENVIAR BITÁCORA (Con GPS y doble envío automático)
+    // =========================================================================
+    function enviarBitacora() {
+      const barco = document.getElementById('bitBarco').value;
+      const btn = document.getElementById('btnBitSubmit');
+
+      if (!barco) {
+        showStatusBit('Selecciona una embarcación.', 'error');
+        return;
+      }
+
+      const capitan = document.getElementById('bitCapitan').value.trim();
+      const marineros = document.getElementById('bitMarineros').value.trim();
+      const ruta = document.getElementById('bitRuta').value.trim();
+      const pax = document.getElementById('bitPax').value || 0;
+      const combustible = document.getElementById('bitCombustibleRange').value;
+      const fecha = document.getElementById('bitFecha').value;
+
+      if (btn) { btn.disabled = true; btn.innerHTML = '🛰️ Obteniendo GPS...'; }
+      showStatusBit('Obteniendo ubicación de Bitácora...', 'info');
+
+      if (!navigator.geolocation) {
+        ejecutarEnvioDoble("Navegador sin soporte GPS");
+        return;
+      }
+
+      let gpsFinalizado = false;
+      const gpsTimeoutTimer = setTimeout(() => {
+        if (!gpsFinalizado) {
+          gpsFinalizado = true;
+          console.warn("GPS timeout en bitácora. Enviando sin coordenadas.");
+          ejecutarEnvioDoble("Posicion no disponible (Timeout GPS)");
+        }
+      }, 4000);
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (gpsFinalizado) return;
+          gpsFinalizado = true;
+          clearTimeout(gpsTimeoutTimer);
+          ejecutarEnvioDoble(`${pos.coords.latitude}, ${pos.coords.longitude}`);
+        },
+        (err) => {
+          if (gpsFinalizado) return;
+          gpsFinalizado = true;
+          clearTimeout(gpsTimeoutTimer);
+          ejecutarEnvioDoble("Posicion no disponible");
+        },
+        { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+      );
+
+      // Función asíncrona interna para lanzar los dos Webhooks
+      async function ejecutarEnvioDoble(coords) {
+        if (btn) { btn.innerHTML = '⏳ Guardando registros...'; }
+        showStatusBit('Enviando Bitácora y Reporte Náutico...', 'info');
+
+        if (typeof WEBHOOK_URL === 'undefined') {
+          showStatusBit('Falta configurar la URL del Webhook.', 'error');
+          if (btn) { btn.disabled = false; btn.innerHTML = '📋 CHECK BITÁCORA'; }
+          return;
+        }
+
+        // 1. Objeto de la Bitácora (se añade GPS)
+        const payloadBitacora = {
+          action: 'bitacora',
+          barco: barco,
+          capitan: capitan,
+          marineros: marineros,
+          ruta: ruta,
+          pasajeros: pax,
+          combustible: combustible + '%',
+          fecha: fecha,
+          coordenadas: coords
+        };
+
+        // 2. Objeto del Reporte Normal (Se fuerza el lugar y se copian pasajeros/barco)
+        const payloadReporteAutomatico = {
+          action: "insert",
+          embarcacion: barco,
+          estado: "⚓ Bitácora Registrada", // Sirve para identificarlo en la tabla
+          pasajeros: pax,
+          maletas: 0,
+          equipaje: 0,
+          bolsos: 0,
+          coordenadas: coords,
+          notas: "Club nautico" // Requisito solicitado
+        };
+
+        try {
+          if (navigator.onLine) {
+            // Se envían ambos payloads al mismo tiempo al Google Sheet
+            await Promise.all([
+              fetch(WEBHOOK_URL, {
+                method: 'POST', mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadBitacora)
+              }),
+              fetch(WEBHOOK_URL, {
+                method: 'POST', mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadReporteAutomatico)
+              })
+            ]);
+
+            showStatusBit('✅ Bitácora y Reporte generados con éxito', 'success');
+
+            // Actualizar mapa global para que el marcador con pasajeros aparezca de inmediato
+            if (typeof cargarMapa === "function" && document.getElementById('dashboardTab').classList.contains('active')) {
+              setTimeout(() => cargarMapa(), 1500);
+            }
+          } else {
+            // Manejo Offline: guardamos ambos en IndexedDB local
+            await guardarReportePendiente(payloadBitacora);
+            await guardarReportePendiente(payloadReporteAutomatico);
+            await registrarSync();
+            showStatusBit('📡 Sin conexión — Guardados. Se enviarán al reconectarse.', 'info');
+            actualizarBannerOffline();
+          }
+
+          // Reiniciar el formulario visual
+          document.getElementById('bitacoraForm').reset();
+          document.getElementById('bitCombustibleRange').value = 100;
+          actualizarBarraCombustible(100);
+          const fechaEl = document.getElementById('bitFecha');
+          if (fechaEl) {
+            const now = new Date();
+            fechaEl.value = now.toLocaleDateString('es-CO', {
+              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            });
+          }
+
+        } catch (error) {
+          console.error("Error en envío doble de bitácora:", error);
+          showStatusBit('❌ Error de red o al guardar. Intenta de nuevo.', 'error');
+        } finally {
+          if (btn) { btn.disabled = false; btn.innerHTML = '📋 CHECK BITÁCORA'; }
+        }
+      }
+    }
+
+    function showStatusBit(msg, type) {
+      const el = document.getElementById('statusBit');
+      if (!el) return;
+      el.innerText = msg;
+      el.className = `status-${type}`;
     }
 
     function enviarAWebhook(coordsOrData, action = "insert") {
@@ -1630,19 +1993,11 @@
           }
         })
         .catch(async () => {
-          // ── FALLBACK OFFLINE ────────────────────────────────────
-          // El fetch falló (sin red). Guardamos el reporte en IndexedDB
-          // y registramos un Background Sync para cuando regrese la red.
           if (action === 'insert') {
             try {
               await guardarReportePendiente(payload);
-              console.log('[App] Reporte guardado offline en IndexedDB.');
-
-              // Registrar Background Sync si el SW lo soporta
               await registrarSync();
-
               showStatus('📡 Sin conexión — Reporte guardado. Se enviará automáticamente al reconectarse.', 'info');
-              // Limpiar el formulario igualmente para evitar doble envío
               document.getElementById('fleetForm').reset();
               document.getElementById('repetirPax').checked = false;
               togglePaxEquipaje(false);
@@ -1663,20 +2018,17 @@
         });
     }
 
-    // ── Registrar Background Sync en el Service Worker ───────────
     async function registrarSync() {
       if ('serviceWorker' in navigator && 'SyncManager' in window) {
         try {
           const reg = await navigator.serviceWorker.ready;
           await reg.sync.register('sync-reportes-pendientes');
-          console.log('[App] Background Sync registrado.');
         } catch (err) {
           console.warn('[App] Background Sync no disponible:', err);
         }
       }
     }
 
-    // ── Actualiza el banner de reportes pendientes ────────────────
     async function actualizarBannerOffline() {
       const banner = document.getElementById('offlineBanner');
       if (!banner) return;
@@ -1747,128 +2099,185 @@
         return;
       }
 
-      Papa.parse(CSV_SHEET_URL + "&t=" + new Date().getTime(), {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function (results) {
-          if (btnRefresh) {
-            btnRefresh.disabled = false;
-            btnRefresh.innerHTML = '🔄 Actualizar Posiciones';
-          }
-          if (markersGroup) markersGroup.clearLayers();
-          for (let key in markersMap) delete markersMap[key];
-
-          const fleetListDiv = document.getElementById('fleetList');
-          if (fleetListDiv) fleetListDiv.innerHTML = '';
-
-          const selectorElem = document.getElementById('mapBoatSelector');
-          if (selectorElem) selectorElem.innerHTML = '<option value="ALL">📍 Mostrar todos los barcos</option>';
-
-          ultimosReportesGlobal = {};
-
-          results.data.forEach(row => {
-            const keys = Object.keys(row);
-            const barcoKey = keys.find(k => k.toLowerCase().includes('embarcacion'));
-            if (barcoKey && row[barcoKey] && row[barcoKey].trim() !== '') {
-              ultimosReportesGlobal[row[barcoKey].trim()] = row;
+      const renderizarTodo = () => {
+        Papa.parse(CSV_SHEET_URL + "&t=" + new Date().getTime(), {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          complete: function (results) {
+            if (btnRefresh) {
+              btnRefresh.disabled = false;
+              btnRefresh.innerHTML = '🔄 Actualizar Posiciones';
             }
-          });
+            if (markersGroup) markersGroup.clearLayers();
+            for (let key in markersMap) delete markersMap[key];
 
-          const listItems = Object.values(ultimosReportesGlobal);
-          cargarUltimoPaxEquipaje();
+            const fleetListDiv = document.getElementById('fleetList');
+            if (fleetListDiv) fleetListDiv.innerHTML = '';
 
-          const countBadge = document.getElementById('fleetCountBadge');
-          if (countBadge) countBadge.textContent = `⚓ ${listItems.length} embarcacion${listItems.length === 1 ? '' : 'es'}`;
+            const selectorElem = document.getElementById('mapBoatSelector');
+            if (selectorElem) selectorElem.innerHTML = '<option value="ALL">📍 Mostrar todos los barcos</option>';
 
-          if (!fleetListDiv) return;
+            ultimosReportesGlobal = {};
 
-          if (listItems.length === 0) {
-            fleetListDiv.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">No hay reportes registrados.</div>';
-            return;
-          }
-
-          listItems.forEach(item => {
-            const keys = Object.keys(item);
-            const barco = item[keys.find(k => k.toLowerCase().includes('embarcacion'))] || 'Sin Nombre';
-            const estado = item[keys.find(k => k.toLowerCase().includes('estado'))] || 'N/A';
-            const pax = item[keys.find(k => k.toLowerCase().includes('pasajeros'))] || 0;
-            const maletas = item[keys.find(k => k.toLowerCase().includes('maletas') || k.toLowerCase().includes('equipaje'))] || 0;
-            const bolsos = item[keys.find(k => k.toLowerCase().includes('bolsos'))] || 0;
-            const lugar = item[keys.find(k => k.toLowerCase().includes('notas'))] || 'Sin ubicación';
-            const fecha = item[keys.find(k => k.toLowerCase().includes('fecha'))] || '';
-            const rawCoords = item[keys.find(k => k.toLowerCase().includes('coordenadas'))] || '';
-            const statusBadgeClass = getStatusBadgeClass(estado);
-
-            let lat = null, lng = null;
-            if (rawCoords && rawCoords.includes(',')) {
-              const parts = rawCoords.split(',');
-              const parsedLat = parseFloat(parts[0].trim());
-              const parsedLng = parseFloat(parts[1].trim());
-              if (!isNaN(parsedLat) && !isNaN(parsedLng) && (Math.abs(parsedLat) > 0.001 || Math.abs(parsedLng) > 0.001) && Math.abs(parsedLat) <= 90 && Math.abs(parsedLng) <= 180) {
-                lat = parsedLat; lng = parsedLng;
+            results.data.forEach(row => {
+              const keys = Object.keys(row);
+              const barcoKey = keys.find(k => k && k.toLowerCase().includes('embarcacion'));
+              if (barcoKey && row[barcoKey] && row[barcoKey].trim() !== '') {
+                ultimosReportesGlobal[row[barcoKey].trim()] = row;
               }
+            });
+
+            const listItems = Object.values(ultimosReportesGlobal);
+            cargarUltimoPaxEquipaje();
+
+            const countBadge = document.getElementById('fleetCountBadge');
+            if (countBadge) countBadge.textContent = `⚓ ${listItems.length} embarcacion${listItems.length === 1 ? '' : 'es'}`;
+
+            if (!fleetListDiv) return;
+
+            if (listItems.length === 0) {
+              fleetListDiv.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">No hay reportes registrados.</div>';
+              return;
             }
 
-            if (selectorElem && barco !== 'Sin Nombre') {
-              const opt = document.createElement('option');
-              opt.value = barco;
-              const gpsNote = (lat !== null && lng !== null) ? '' : ' - (Sin GPS)';
-              opt.textContent = `🛥️ ${barco} (${estado})${gpsNote}`;
-              selectorElem.appendChild(opt);
-            }
+            listItems.forEach(item => {
+              const keys = Object.keys(item);
+              const barco = item[keys.find(k => k && k.toLowerCase().includes('embarcacion'))] || 'Sin Nombre';
+              const estado = item[keys.find(k => k && k.toLowerCase().includes('estado'))] || 'N/A';
+              const pax = item[keys.find(k => k && k.toLowerCase().includes('pasajeros'))] || 0;
+              const maletas = item[keys.find(k => k && (k.toLowerCase().includes('maletas') || k.toLowerCase().includes('equipaje')))] || 0;
+              const bolsos = item[keys.find(k => k && k.toLowerCase().includes('bolsos'))] || 0;
+              const lugar = item[keys.find(k => k && k.toLowerCase().includes('notas'))] || 'Sin ubicación';
+              const fecha = item[keys.find(k => k && k.toLowerCase().includes('fecha'))] || '';
+              const rawCoords = item[keys.find(k => k && k.toLowerCase().includes('coordenadas'))] || '';
+              const statusBadgeClass = getStatusBadgeClass(estado);
 
-            if (map && lat !== null && lng !== null) {
-              const icon = L.divIcon({ className: 'fixed-dot', html: '<span class="dot"></span>', iconSize: [14, 14], iconAnchor: [7, 7] });
-              const marker = L.marker([lat, lng], { icon: icon, riseOnHover: true });
+              // ── Extraer última bitácora para este barco (en PC) ──
+              const bitacora = ultimasBitacorasGlobal[barco];
+              let bitacoraHTML = '';
+              let bitacoraPopupHTML = '';
 
-              const popupText = `
-              <div class="map-popup-card">
-                <div class="map-popup-header">
-                  <span class="map-popup-title" title="${barco}">${barco}</span>
-                  <span class="status-badge ${statusBadgeClass}">${estado}</span>
-                </div>
-                <div class="map-popup-item"><b>Lugar:</b> ${lugar}</div>
-                <div class="map-popup-item"><b>Pax:</b> ${pax} &bull; <b>Maletas:</b> ${maletas} &bull; <b>Bolsos:</b> ${bolsos}</div>
-                <div class="map-popup-time">${fecha}</div>
-              </div>`;
+              if (bitacora) {
+                const bKeys = Object.keys(bitacora);
+                const capitan = bitacora[bKeys.find(k => k && k.toLowerCase().includes('capitan'))] || 'N/A';
+                const marineros = bitacora[bKeys.find(k => k && k.toLowerCase().includes('marinero'))] || 'N/A';
+                const ruta = bitacora[bKeys.find(k => k && k.toLowerCase().includes('ruta'))] || 'N/A';
+                const combustible = bitacora[bKeys.find(k => k && k.toLowerCase().includes('combustible'))] || 'N/A';
+                const fechaBit = bitacora[bKeys.find(k => k && k.toLowerCase().includes('fecha'))] || '';
 
-              marker.bindPopup(popupText, { autoClose: false, closeOnClick: false, offset: [0, -16], minWidth: 200, maxWidth: 290 });
-              marker.on('click', () => focusOnBoat(barco));
-              markersGroup.addLayer(marker);
-              markersMap[barco] = { marker: marker, lat: lat, lng: lng };
-            }
+                bitacoraHTML = `
+                <div class="boat-bitacora-box">
+                  <div class="bitacora-header">📋 Última Bitácora</div>
+                  <div class="boat-bitacora-item"><b>Capitán:</b> ${capitan} &bull; <b>Combustible:</b> ${combustible}</div>
+                  <div class="boat-bitacora-item"><b>Marineros:</b> ${marineros}</div>
+                  <div class="boat-bitacora-item"><b>Ruta:</b> ${ruta}</div>
+                  <div class="boat-time">Enviado: ${fechaBit}</div>
+                </div>`;
 
-            const card = document.createElement('div');
-            card.className = 'boat-card';
-            card.setAttribute('data-boat', barco);
-            card.onclick = () => focusOnBoat(barco);
-            const gpsIndicator = (lat !== null && lng !== null) ? '' : '<span style="color: #f59e0b; font-size: 0.75rem; margin-left: 6px;">📍 Sin GPS</span>';
+                bitacoraPopupHTML = `
+                <div class="map-popup-item" style="margin-top:6px; padding-top:4px; border-top:1px dashed #334155;">
+                  <b>📋 Bitácora:</b> Capt. ${capitan} | Combustible: ${combustible}<br>
+                  <small><b>Ruta:</b> ${ruta}</small>
+                </div>`;
+              }
 
-            card.innerHTML = `
-            <button class="btn-delete" onclick="eliminarBarcoEvent(event, '${barco}')" title="Eliminar registros">🗑️</button>
-            <div class="boat-header">
-              <span class="boat-title">${barco}</span>
-              <span class="status-badge ${statusBadgeClass}">${estado}</span>
-            </div>
-            <div class="boat-place">Lugar: ${lugar}${gpsIndicator}</div>
-            <div class="boat-info">
-              <span><b>Pasajeros:</b> ${pax}</span>
-              <span><b>Maletas:</b> ${maletas}</span>
-              <span><b>Bolsos:</b> ${bolsos}</span>
-            </div>
-            <div class="boat-time">${fecha}</div>`;
-            fleetListDiv.appendChild(card);
-          });
+              let lat = null, lng = null;
+              if (rawCoords && rawCoords.includes(',')) {
+                const parts = rawCoords.split(',');
+                const parsedLat = parseFloat(parts[0].trim());
+                const parsedLng = parseFloat(parts[1].trim());
+                if (!isNaN(parsedLat) && !isNaN(parsedLng) && (Math.abs(parsedLat) > 0.001 || Math.abs(parsedLng) > 0.001) && Math.abs(parsedLat) <= 90 && Math.abs(parsedLng) <= 180) {
+                  lat = parsedLat; lng = parsedLng;
+                }
+              }
 
-          showAllBoats();
-        },
-        error: function (err) {
-          console.error("Error cargando mapa:", err);
-          if (btnRefresh) { btnRefresh.disabled = false; btnRefresh.innerHTML = '🔄 Actualizar Posiciones'; }
-          showStatus("Error al cargar datos del mapa.", "error");
-        }
-      });
+              if (selectorElem && barco !== 'Sin Nombre') {
+                const opt = document.createElement('option');
+                opt.value = barco;
+                const gpsNote = (lat !== null && lng !== null) ? '' : ' - (Sin GPS)';
+                opt.textContent = `🛥️ ${barco} (${estado})${gpsNote}`;
+                selectorElem.appendChild(opt);
+              }
+
+              if (map && lat !== null && lng !== null) {
+                const icon = L.divIcon({ className: 'fixed-dot', html: '<span class="dot"></span>', iconSize: [14, 14], iconAnchor: [7, 7] });
+                const marker = L.marker([lat, lng], { icon: icon, riseOnHover: true });
+
+                const popupText = `
+                <div class="map-popup-card">
+                  <div class="map-popup-header">
+                    <span class="map-popup-title" title="${barco}">${barco}</span>
+                    <span class="status-badge ${statusBadgeClass}">${estado}</span>
+                  </div>
+                  <div class="map-popup-item"><b>Lugar:</b> ${lugar}</div>
+                  <div class="map-popup-item"><b>Pax:</b> ${pax} &bull; <b>Maletas:</b> ${maletas} &bull; <b>Bolsos:</b> ${bolsos}</div>
+                  ${bitacoraPopupHTML}
+                  <div class="map-popup-time">${fecha}</div>
+                </div>`;
+
+                marker.bindPopup(popupText, { autoClose: false, closeOnClick: false, offset: [0, -16], minWidth: 200, maxWidth: 290 });
+                marker.on('click', () => focusOnBoat(barco));
+                markersGroup.addLayer(marker);
+                markersMap[barco] = { marker: marker, lat: lat, lng: lng };
+              }
+
+              const card = document.createElement('div');
+              card.className = 'boat-card';
+              card.setAttribute('data-boat', barco);
+              card.onclick = () => focusOnBoat(barco);
+              const gpsIndicator = (lat !== null && lng !== null) ? '' : '<span style="color: #f59e0b; font-size: 0.75rem; margin-left: 6px;">📍 Sin GPS</span>';
+
+              card.innerHTML = `
+              <button class="btn-delete" onclick="eliminarBarcoEvent(event, '${barco}')" title="Eliminar registros">🗑️</button>
+              <div class="boat-header">
+                <span class="boat-title">${barco}</span>
+                <span class="status-badge ${statusBadgeClass}">${estado}</span>
+              </div>
+              <div class="boat-place">Lugar: ${lugar}${gpsIndicator}</div>
+              <div class="boat-info">
+                <span><b>Pasajeros:</b> ${pax}</span>
+                <span><b>Maletas:</b> ${maletas}</span>
+                <span><b>Bolsos:</b> ${bolsos}</span>
+              </div>
+              <div class="boat-time">Estado: ${fecha}</div>
+              ${bitacoraHTML}`;
+              fleetListDiv.appendChild(card);
+            });
+
+            showAllBoats();
+          },
+          error: function (err) {
+            console.error("Error cargando mapa:", err);
+            if (btnRefresh) { btnRefresh.disabled = false; btnRefresh.innerHTML = '🔄 Actualizar Posiciones'; }
+            showStatus("Error al cargar datos del mapa.", "error");
+          }
+        });
+      };
+
+      if (typeof CSV_BITACORA_URL !== 'undefined' && CSV_BITACORA_URL) {
+        Papa.parse(CSV_BITACORA_URL + "&t=" + new Date().getTime(), {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          complete: function (resBit) {
+            ultimasBitacorasGlobal = {};
+            resBit.data.forEach(row => {
+              const keys = Object.keys(row);
+              const barcoKey = keys.find(k => k && k.toLowerCase().includes('barco'));
+              if (barcoKey && row[barcoKey] && row[barcoKey].trim() !== '') {
+                ultimasBitacorasGlobal[row[barcoKey].trim()] = row;
+              }
+            });
+            renderizarTodo();
+          },
+          error: function () {
+            renderizarTodo();
+          }
+        });
+      } else {
+        renderizarTodo();
+      }
     }
 
     function focusOnBoat(barco) {
@@ -1893,7 +2302,6 @@
         const target = markersMap[barco];
         map.flyTo([target.lat, target.lng], 14, { duration: 1.0 });
         setTimeout(() => target.marker.openPopup(), 350);
-        if (window.innerWidth < 768) { document.getElementById('map').scrollIntoView({ behavior: 'smooth' }); }
       } else {
         showStatus(`ℹ️ "${barco}" no tiene coordenadas GPS registradas.`, "info");
       }
@@ -1932,48 +2340,83 @@
       if (val === 'ALL') { showAllBoats(); } else { focusOnBoat(val); }
     }
 
+    async function sincronizarReportesPendientes() {
+      if (!navigator.onLine) {
+        actualizarBannerOffline();
+        return;
+      }
+
+      try {
+        const pendientes = await obtenerReportesPendientes();
+        if (!pendientes || pendientes.length === 0) {
+          await actualizarBannerOffline();
+          return;
+        }
+
+        const banner = document.getElementById('offlineBanner');
+        if (banner) {
+          banner.className = 'banner-pending';
+          banner.textContent = `⏳ Sincronizando ${pendientes.length} reporte(s) pendiente(s)...`;
+        }
+
+        for (const registro of pendientes) {
+          try {
+            await fetch(WEBHOOK_URL, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(registro.payload),
+            });
+            await eliminarReportePendiente(registro.id);
+          } catch (err) {
+            console.warn(`[App] Error al enviar reporte guardado ID=${registro.id}:`, err);
+          }
+        }
+        await actualizarBannerOffline();
+      } catch (err) {
+        console.error('[App] Error en sincronización inicial:', err);
+      }
+    }
+
     // ════════════════════════════════════════════════════════════
     //  PWA — Registro del Service Worker y lógica offline
     // ════════════════════════════════════════════════════════════
-
-    // 1. Registrar el Service Worker
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', async () => {
-        try {
-          const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-          console.log('[App] Service Worker registrado:', reg.scope);
+      navigator.serviceWorker.register('./sw.js').then((registration) => {
 
-          // Guardar la WEBHOOK_URL en IndexedDB para que el SW pueda usarla
-          if (typeof WEBHOOK_URL !== 'undefined') {
-            await guardarConfig('webhook_url', WEBHOOK_URL);
-          }
-        } catch (err) {
-          console.warn('[App] Error al registrar Service Worker:', err);
-        }
+        // Escuchar si hay un nuevo Service Worker esperando para activarse
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Mostrar un banner o notificación en la UI
+              if (confirm('Hay una nueva versión disponible de la app. ¿Deseas actualizar ahora?')) {
+                newWorker.postMessage({ action: 'skipWaiting' });
+              }
+            }
+          });
+        });
       });
 
-      // 2. Escuchar mensajes del SW (cuando un reporte pendiente fue enviado)
-      navigator.serviceWorker.addEventListener('message', async (event) => {
-        if (event.data && event.data.tipo === 'reporte_enviado') {
-          console.log('[App] SW confirmó envío del reporte ID:', event.data.id);
-          await actualizarBannerOffline();
+      // Recargar la página una vez que el nuevo SW haya tomado el control
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
         }
       });
     }
 
-    // 3. Listener de red: actualiza el banner al cambiar conectividad
     window.addEventListener('offline', () => {
       actualizarBannerOffline();
     });
 
     window.addEventListener('online', async () => {
-      console.log('[App] Conexión restaurada.');
       await actualizarBannerOffline();
 
-      // Fallback para Safari/iOS (sin Background Sync):
-      // reintenta enviar los pendientes directamente desde la página
       if (!('SyncManager' in window)) {
-        console.log('[App] Background Sync no soportado — reintentando desde la página...');
         try {
           const pendientes = await obtenerReportesPendientes();
           if (pendientes.length === 0) return;
@@ -1987,7 +2430,6 @@
                 body: JSON.stringify(registro.payload),
               });
               await eliminarReportePendiente(registro.id);
-              console.log(`[App] Reporte offline ID=${registro.id} enviado exitosamente.`);
             } catch (err) {
               console.warn(`[App] Fallo al reintentar reporte ID=${registro.id}:`, err);
             }
@@ -1997,18 +2439,28 @@
           console.error('[App] Error en reintento online:', err);
         }
       } else {
-        // Si hay Background Sync disponible, registra el tag para que el SW lo maneje
         await registrarSync();
       }
     });
 
-    // 4. Al cargar la página, mostrar si hay reportes pendientes
     window.addEventListener('DOMContentLoaded', () => {
       actualizarBannerOffline();
+    });
+
+    window.addEventListener('offline', () => {
+      actualizarBannerOffline();
+    });
+
+    window.addEventListener('online', async () => {
+      await sincronizarReportesPendientes();
+    });
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await sincronizarReportesPendientes();
     });
 
   </script>
 
 </body>
 
-</html>
+</html>
