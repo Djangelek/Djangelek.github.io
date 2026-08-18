@@ -6,6 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Control Flota Náutica - Cartagena</title>
 
+  <!-- PWA: Manifiesto e indicador de color de tema -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#38bdf8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <!-- 1. Carga asíncrona del CSS del mapa (Optimización de velocidad) -->
   <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" as="style"
     onload="this.onload=null;this.rel='stylesheet'">
@@ -15,6 +22,9 @@
 
   <!-- 2. Carga del archivo de Configuración (Debe estar en la misma carpeta) -->
   <script src="api_config.js"></script>
+
+  <!-- 3. Módulo IndexedDB para soporte offline (debe cargarse antes del script principal) -->
+  <script src="offline-db.js"></script>
 
   <!-- 3. Librerías diferidas (Se cargan en 2do plano sin bloquear la página) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
@@ -976,6 +986,40 @@
     .map-popup-item {
       color: #cbd5e1;
     }
+
+    /* ── BANNER DE ESTADO OFFLINE ────────────────────────────── */
+    #offlineBanner {
+      display: none;
+      max-width: 620px;
+      margin: 0 auto 14px auto;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-align: center;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    #offlineBanner.banner-offline {
+      background: linear-gradient(135deg, rgba(127,29,29,0.85), rgba(153,27,27,0.7));
+      color: #fca5a5;
+      border: 1px solid rgba(248,113,113,0.4);
+      box-shadow: 0 2px 12px rgba(239,68,68,0.2);
+      display: block;
+    }
+
+    #offlineBanner.banner-pending {
+      background: linear-gradient(135deg, rgba(12,74,110,0.85), rgba(7,89,133,0.7));
+      color: #7dd3fc;
+      border: 1px solid rgba(56,189,248,0.35);
+      box-shadow: 0 2px 12px rgba(56,189,248,0.15);
+      display: block;
+    }
   </style>
 </head>
 
@@ -1047,6 +1091,8 @@
 
         <button type="button" id="btnSubmit" class="btn-submit" onclick="enviarReporte()">ENVIAR REPORTE</button>
       </form>
+      <!-- Banner de estado offline / reportes pendientes -->
+      <div id="offlineBanner"></div>
       <div id="status"></div>
     </div>
 
@@ -1583,13 +1629,77 @@
             setTimeout(() => cargarMapa(), 1500);
           }
         })
-        .catch(() => showStatus("Error de red.", "error"))
+        .catch(async () => {
+          // ── FALLBACK OFFLINE ────────────────────────────────────
+          // El fetch falló (sin red). Guardamos el reporte en IndexedDB
+          // y registramos un Background Sync para cuando regrese la red.
+          if (action === 'insert') {
+            try {
+              await guardarReportePendiente(payload);
+              console.log('[App] Reporte guardado offline en IndexedDB.');
+
+              // Registrar Background Sync si el SW lo soporta
+              await registrarSync();
+
+              showStatus('📡 Sin conexión — Reporte guardado. Se enviará automáticamente al reconectarse.', 'info');
+              // Limpiar el formulario igualmente para evitar doble envío
+              document.getElementById('fleetForm').reset();
+              document.getElementById('repetirPax').checked = false;
+              togglePaxEquipaje(false);
+            } catch (dbErr) {
+              console.error('[App] Error guardando en IndexedDB:', dbErr);
+              showStatus('❌ Error de red y no se pudo guardar offline. Intenta nuevamente.', 'error');
+            }
+            actualizarBannerOffline();
+          } else {
+            showStatus('❌ Error de red. Verifica tu conexión.', 'error');
+          }
+        })
         .finally(() => {
           if (btn) {
             btn.disabled = false;
             btn.innerHTML = 'ENVIAR REPORTE';
           }
         });
+    }
+
+    // ── Registrar Background Sync en el Service Worker ───────────
+    async function registrarSync() {
+      if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          await reg.sync.register('sync-reportes-pendientes');
+          console.log('[App] Background Sync registrado.');
+        } catch (err) {
+          console.warn('[App] Background Sync no disponible:', err);
+        }
+      }
+    }
+
+    // ── Actualiza el banner de reportes pendientes ────────────────
+    async function actualizarBannerOffline() {
+      const banner = document.getElementById('offlineBanner');
+      if (!banner) return;
+
+      if (!navigator.onLine) {
+        banner.className = 'banner-offline';
+        banner.textContent = '🔴 Sin conexión a internet';
+        return;
+      }
+
+      try {
+        const total = await contarReportesPendientes();
+        if (total > 0) {
+          banner.className = 'banner-pending';
+          banner.textContent = `⏳ ${total} reporte${total > 1 ? 's' : ''} pendiente${total > 1 ? 's' : ''} — Sincronizando...`;
+        } else {
+          banner.className = '';
+          banner.style.display = 'none';
+        }
+      } catch {
+        banner.className = '';
+        banner.style.display = 'none';
+      }
     }
 
     function eliminarBarcoEvent(e, barcoNombre) {
@@ -1821,8 +1931,84 @@
     function onSelectBoatFilter(val) {
       if (val === 'ALL') { showAllBoats(); } else { focusOnBoat(val); }
     }
+
+    // ════════════════════════════════════════════════════════════
+    //  PWA — Registro del Service Worker y lógica offline
+    // ════════════════════════════════════════════════════════════
+
+    // 1. Registrar el Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+          console.log('[App] Service Worker registrado:', reg.scope);
+
+          // Guardar la WEBHOOK_URL en IndexedDB para que el SW pueda usarla
+          if (typeof WEBHOOK_URL !== 'undefined') {
+            await guardarConfig('webhook_url', WEBHOOK_URL);
+          }
+        } catch (err) {
+          console.warn('[App] Error al registrar Service Worker:', err);
+        }
+      });
+
+      // 2. Escuchar mensajes del SW (cuando un reporte pendiente fue enviado)
+      navigator.serviceWorker.addEventListener('message', async (event) => {
+        if (event.data && event.data.tipo === 'reporte_enviado') {
+          console.log('[App] SW confirmó envío del reporte ID:', event.data.id);
+          await actualizarBannerOffline();
+        }
+      });
+    }
+
+    // 3. Listener de red: actualiza el banner al cambiar conectividad
+    window.addEventListener('offline', () => {
+      actualizarBannerOffline();
+    });
+
+    window.addEventListener('online', async () => {
+      console.log('[App] Conexión restaurada.');
+      await actualizarBannerOffline();
+
+      // Fallback para Safari/iOS (sin Background Sync):
+      // reintenta enviar los pendientes directamente desde la página
+      if (!('SyncManager' in window)) {
+        console.log('[App] Background Sync no soportado — reintentando desde la página...');
+        try {
+          const pendientes = await obtenerReportesPendientes();
+          if (pendientes.length === 0) return;
+
+          for (const registro of pendientes) {
+            try {
+              await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(registro.payload),
+              });
+              await eliminarReportePendiente(registro.id);
+              console.log(`[App] Reporte offline ID=${registro.id} enviado exitosamente.`);
+            } catch (err) {
+              console.warn(`[App] Fallo al reintentar reporte ID=${registro.id}:`, err);
+            }
+          }
+          await actualizarBannerOffline();
+        } catch (err) {
+          console.error('[App] Error en reintento online:', err);
+        }
+      } else {
+        // Si hay Background Sync disponible, registra el tag para que el SW lo maneje
+        await registrarSync();
+      }
+    });
+
+    // 4. Al cargar la página, mostrar si hay reportes pendientes
+    window.addEventListener('DOMContentLoaded', () => {
+      actualizarBannerOffline();
+    });
+
   </script>
 
 </body>
 
-</html>
+</html>
