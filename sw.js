@@ -1,7 +1,7 @@
 importScripts('offline-db.js');
 
 // 1. Cambia este nombre en cada despliegue para forzar el reemplazo del caché
-const CACHE_NAME = 'colombia-navega-v8';
+const CACHE_NAME = 'colombia-navega-v9';
 
 const ASSETS_TO_CACHE = [
   './',
@@ -17,7 +17,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       const requests = ASSETS_TO_CACHE.map((url) => {
-        // cache: 'reload' obliga al navegador a buscar el archivo en el servidor web
         return fetch(new Request(url, { cache: 'reload' })).then((response) => {
           if (!response.ok) {
             throw new Error(`Error descargando ${url}: ${response.statusText}`);
@@ -28,10 +27,9 @@ self.addEventListener('install', (event) => {
       return Promise.all(requests);
     })
   );
-  // NOTA: Eliminamos self.skipWaiting() para no romper sesiones activas
 });
 
-// ACTIVACIÓN: Elimina cachés antiguos y notifica a las pestañas
+// ACTIVACIÓN: Elimina cachés antiguos y toma control inmediato de las pestañas
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -42,9 +40,8 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  // NOTA: Eliminamos self.clients.claim()
 });
 
 // ESCUCHA DE MENSAJES: Permite forzar la actualización si la app se lo pide
@@ -64,7 +61,6 @@ self.addEventListener('fetch', (event) => {
   }
 
   // ESTRATEGIA NETWORK-FIRST PARA DOCUMENTOS HTML Y CONFIG
-  // Esto asegura que index.html siempre intente buscar la versión más reciente si hay red
   if (event.request.mode === 'navigate' || requestUrl.pathname.endsWith('api_config.js')) {
     event.respondWith(
       fetch(event.request)
@@ -93,17 +89,19 @@ self.addEventListener('fetch', (event) => {
 // SINCRONIZACIÓN EN SEGUNDO PLANO
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-reportes-pendientes') {
-    event.waitUntil(procesarReportesPendientesSW());
+    event.waitUntil(procesarSincronizacionEnSegundoPlano());
   }
 });
 
-async function procesarReportesPendientesSW() {
+async function procesarSincronizacionEnSegundoPlano() {
   try {
     const pendientes = await obtenerReportesPendientes();
     if (!pendientes || pendientes.length === 0) return;
 
     const webhookUrl = await obtenerConfig('webhook_url');
     if (!webhookUrl) return;
+
+    let alMenosUnoEnviado = false;
 
     for (const registro of pendientes) {
       try {
@@ -114,16 +112,20 @@ async function procesarReportesPendientesSW() {
           body: JSON.stringify(registro.payload),
         });
         await eliminarReportePendiente(registro.id);
+        alMenosUnoEnviado = true;
       } catch (err) {
-        console.warn('[SW] Fallo al enviar reporte guardado ID=' + registro.id, err);
+        console.warn('[SW] Error enviando registro ID ' + registro.id, err);
       }
     }
 
-    const clientsList = await self.clients.matchAll();
-    for (const client of clientsList) {
-      client.postMessage({ tipo: 'reporte_enviado' });
+    // Notificar a la app para actualizar el banner si hubo envíos exitosos
+    if (alMenosUnoEnviado) {
+      const clientsList = await self.clients.matchAll();
+      for (const client of clientsList) {
+        client.postMessage({ tipo: 'reporte_enviado' });
+      }
     }
   } catch (err) {
-    console.error('[SW] Error en procesarReportesPendientesSW:', err);
+    console.error('[SW] Fallo general al enviar en segundo plano:', err);
   }
 }

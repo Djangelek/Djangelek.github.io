@@ -1989,28 +1989,24 @@
             setTimeout(() => cargarMapa(), 1500);
           }
         })
+        // En index.html, dentro de la captura de error offline:
         .catch(async () => {
           if (action === 'insert') {
             try {
               await guardarReportePendiente(payload);
-              await registrarSync();
-              showStatus('📡 Sin conexión — Reporte guardado. Se enviará automáticamente al reconectarse.', 'info');
+
+              // REGISTRO OBLIGATORIO DE BACKGROUND SYNC
+              if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                const reg = await navigator.serviceWorker.ready;
+                await reg.sync.register('sync-reportes-pendientes');
+                console.log('[App] Tarea en segundo plano registrada en Android');
+              }
+
+              showStatus('📡 Sin conexión — Reporte guardado. Android lo enviará automáticamente al tener señal.', 'info');
               document.getElementById('fleetForm').reset();
-              document.getElementById('repetirPax').checked = false;
-              togglePaxMaletasBolsos(false);
             } catch (dbErr) {
-              console.error('[App] Error guardando en IndexedDB:', dbErr);
-              showStatus('❌ Error de red y no se pudo guardar offline. Intenta nuevamente.', 'error');
+              showStatus('❌ Error guardando offline.', 'error');
             }
-            actualizarBannerOffline();
-          } else {
-            showStatus('❌ Error de red. Verifica tu conexión.', 'error');
-          }
-        })
-        .finally(() => {
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = 'ENVIAR REPORTE';
           }
         });
     }
@@ -2332,22 +2328,24 @@
 
     async function sincronizarReportesPendientes() {
       if (!navigator.onLine) {
-        actualizarBannerOffline();
+        await actualizarBannerOffline();
         return;
       }
 
       try {
         const pendientes = await obtenerReportesPendientes();
+
+        // Si no hay reportes por enviar, limpiar cualquier mensaje de estado anterior
         if (!pendientes || pendientes.length === 0) {
           await actualizarBannerOffline();
+          ocultarMensajeStatus();
           return;
         }
 
-        const banner = document.getElementById('offlineBanner');
-        if (banner) {
-          banner.className = 'banner-pending';
-          banner.textContent = `⏳ Sincronizando ${pendientes.length} reporte(s) pendiente(s)...`;
-        }
+        // Mostrar aviso visual de que se está enviando la cola
+        showStatus(`📡 Enviando ${pendientes.length} reporte(s) pendiente(s)...`, 'info');
+
+        let enviadosConExito = 0;
 
         for (const registro of pendientes) {
           try {
@@ -2358,29 +2356,57 @@
               body: JSON.stringify(registro.payload),
             });
             await eliminarReportePendiente(registro.id);
+            enviadosConExito++;
           } catch (err) {
-            console.warn(`[App] Error al enviar reporte guardado ID=${registro.id}:`, err);
+            console.warn(`[App] Error enviando registro pendiente ID=${registro.id}:`, err);
           }
         }
+
         await actualizarBannerOffline();
+
+        // ⚡ Si se enviaron reportes correctamente, mostrar confirmación y ocultarla a los 4 segundos
+        if (enviadosConExito > 0) {
+          showStatus('✅ Reportes pendientes enviados con éxito', 'success');
+          setTimeout(() => {
+            ocultarMensajeStatus();
+          }, 4000); // Se oculta automáticamente después de 4 segundos
+        } else {
+          ocultarMensajeStatus();
+        }
+
       } catch (err) {
-        console.error('[App] Error en sincronización inicial:', err);
+        console.error('[App] Error procesando la cola de reportes pendientes:', err);
+        ocultarMensajeStatus();
+      }
+    }
+
+    // Helper para limpiar la barra de estado
+    function ocultarMensajeStatus() {
+      const statusDiv = document.getElementById('status');
+      if (statusDiv) {
+        statusDiv.innerText = '';
+        statusDiv.className = '';
+        statusDiv.style.display = 'none';
       }
     }
 
     // ════════════════════════════════════════════════════════════
-    //  PWA — Registro del Service Worker y lógica offline
+    // PWA — Registro del Service Worker y escucha de eventos
     // ════════════════════════════════════════════════════════════
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').then((registration) => {
 
-        // Escuchar si hay un nuevo Service Worker esperando para activarse
+        // 1. Guardar la URL del webhook en IndexedDB para el SW
+        if (typeof WEBHOOK_URL !== 'undefined') {
+          guardarConfig('webhook_url', WEBHOOK_URL);
+        }
+
+        // 2. Detectar actualizaciones de la app
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
 
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Mostrar un banner o notificación en la UI
               if (confirm('Hay una nueva versión disponible de la app. ¿Deseas actualizar ahora?')) {
                 newWorker.postMessage({ action: 'skipWaiting' });
               }
@@ -2389,12 +2415,23 @@
         });
       });
 
-      // Recargar la página una vez que el nuevo SW haya tomado el control
+      // 3. Recargar automáticamente la pantalla al aceptar la nueva versión
       let refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!refreshing) {
           refreshing = true;
           window.location.reload();
+        }
+      });
+
+      // 4. Escuchar cuando el SW envía reportes en segundo plano
+      navigator.serviceWorker.addEventListener('message', async (event) => {
+        if (event.data && event.data.tipo === 'reporte_enviado') {
+          await actualizarBannerOffline();
+          showStatus('✅ Reporte enviado en segundo plano con éxito', 'success');
+          setTimeout(() => {
+            ocultarMensajeStatus();
+          }, 4000);
         }
       });
     }
@@ -2441,7 +2478,10 @@
       actualizarBannerOffline();
     });
 
+    // ⚡ Escucha instantánea cuando el módem del teléfono recupera la red
     window.addEventListener('online', async () => {
+      console.log('[App] Conexión detectada. Procesando cola inmediatamente...');
+      showStatus('📡 Señal recuperada — Enviando reportes pendientes...', 'info');
       await sincronizarReportesPendientes();
     });
 
