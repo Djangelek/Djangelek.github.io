@@ -1175,7 +1175,7 @@
       <form id="fleetForm">
 
         <label for="embarcacion">Embarcacion / Yate</label>
-        <select id="embarcacion" onchange="cargarUltimoPaxMaletasBolsos()" required>
+        <select id="embarcacion" onchange="cargarUltimoPaxMaletasBolsos(); precargarGPS();" required>
           <option value="" disabled selected>Seleccione embarcación...</option>
         </select>
 
@@ -1733,6 +1733,29 @@
       }
     }
 
+    // Variable global para almacenar la última ubicación conocida
+    let ultimaCoordenadaGPS = "Posición no disponible";
+
+    // Solicita el GPS en segundo plano sin bloquear la pantalla
+    function precargarGPS() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            ultimaCoordenadaGPS = `${pos.coords.latitude}, ${pos.coords.longitude}`;
+            console.log("GPS precargado con éxito:", ultimaCoordenadaGPS);
+          },
+          (err) => console.warn("No se pudo precargar GPS:", err),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        );
+      }
+    }
+
+    // Iniciar precarga del GPS apenas el usuario seleccione una embarcación
+    document.getElementById('embarcacion').addEventListener('change', () => {
+      cargarUltimoPaxEquipaje();
+      precargarGPS(); // Se activa en segundo plano al elegir el barco
+    });
+
     function enviarReporte() {
       const barco = document.getElementById('embarcacion').value;
       const btn = document.getElementById('btnSubmit');
@@ -1744,46 +1767,12 @@
 
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '🛰️ Obteniendo GPS...';
+        btn.innerHTML = '⏳ Enviando reporte...';
       }
-      showStatus("Obteniendo precisión de GPS...", "info");
+      showStatus("Enviando reporte...", "info");
 
-      if (!navigator.geolocation) {
-        if (btn) btn.innerHTML = '⏳ Enviando reporte...';
-        enviarAWebhook("Navegador sin soporte GPS", "insert");
-        return;
-      }
-
-      let gpsFinalizado = false;
-
-      // Límite de 4 segundos para PC
-      const gpsTimeoutTimer = setTimeout(() => {
-        if (!gpsFinalizado) {
-          gpsFinalizado = true;
-          console.warn("GPS no respondió a tiempo (PC Timeout). Enviando sin coordenadas.");
-          if (btn) btn.innerHTML = '⏳ Enviando reporte...';
-          enviarAWebhook("Posicion no disponible (Timeout GPS)", "insert");
-        }
-      }, 4000);
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (gpsFinalizado) return;
-          gpsFinalizado = true;
-          clearTimeout(gpsTimeoutTimer);
-          if (btn) btn.innerHTML = '⏳ Enviando reporte...';
-          enviarAWebhook(`${pos.coords.latitude}, ${pos.coords.longitude}`, "insert");
-        },
-        (err) => {
-          if (gpsFinalizado) return;
-          gpsFinalizado = true;
-          clearTimeout(gpsTimeoutTimer);
-          console.warn("GPS no disponible:", err);
-          if (btn) btn.innerHTML = '⏳ Enviando reporte...';
-          enviarAWebhook("Posicion no disponible", "insert");
-        },
-        { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
-      );
+      // Usa inmediatamente el GPS que se obtuvo mientras el usuario llenaba el formulario
+      enviarAWebhook(ultimaCoordenadaGPS, "insert");
     }
 
     function actualizarBarraCombustible(val) {
@@ -1847,7 +1836,7 @@
           clearTimeout(gpsTimeoutTimer);
           ejecutarEnvioDoble("Posicion no disponible");
         },
-        { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
       );
 
       // Función interna para procesar el envío de ambos registros
