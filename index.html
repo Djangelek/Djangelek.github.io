@@ -2315,19 +2315,30 @@
       if (val === 'ALL') { showAllBoats(); } else { focusOnBoat(val); }
     }
 
+    // Función para restaurar el botón de envío a su estado normal
+    function desbloquearBotonEnvio() {
+      const btn = document.getElementById('btnSubmit');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Enviar Reporte';
+      }
+    }
+
     async function sincronizarReportesPendientes() {
       if (!navigator.onLine) {
         await actualizarBannerOffline();
+        desbloquearBotonEnvio(); // Asegura desbloquear si no hay red
         return;
       }
 
       try {
         const pendientes = await obtenerReportesPendientes();
 
-        // Si no hay reportes por enviar, limpiar cualquier mensaje de estado anterior
+        // Si no hay reportes por enviar, limpiar estado y desbloquear botón
         if (!pendientes || pendientes.length === 0) {
           await actualizarBannerOffline();
           ocultarMensajeStatus();
+          desbloquearBotonEnvio(); // 👈 Desbloquear aquí
           return;
         }
 
@@ -2353,12 +2364,11 @@
 
         await actualizarBannerOffline();
 
-        // ⚡ Si se enviaron reportes correctamente, mostrar confirmación y ocultarla a los 4 segundos
         if (enviadosConExito > 0) {
           showStatus('✅ Reportes pendientes enviados con éxito', 'success');
           setTimeout(() => {
             ocultarMensajeStatus();
-          }, 4000); // Se oculta automáticamente después de 4 segundos
+          }, 4000);
         } else {
           ocultarMensajeStatus();
         }
@@ -2366,6 +2376,18 @@
       } catch (err) {
         console.error('[App] Error procesando la cola de reportes pendientes:', err);
         ocultarMensajeStatus();
+      } finally {
+        // ⚡ EL BLOQUE FINALLY SIEMPRE SE EJECUTA AL TERMINAR (Éxito o Error)
+        desbloquearBotonEnvio();
+      }
+    }
+
+    // Función auxiliar para reactivar el botón en la interfaz
+    function desbloquearBotonEnvio() {
+      const btn = document.getElementById('btnSubmit');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Enviar Reporte'; // Cambia 'Enviar Reporte' por el texto que tenga tu botón
       }
     }
 
