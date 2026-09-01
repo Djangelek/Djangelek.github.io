@@ -41,4 +41,8 @@ gps-scraper/output/
 
 # Artefactos efímeros de la herramienta de diseño (impeccable)
 .impeccable/question-*.json
+.impeccable/questions/
 .impeccable/review/
+
+# Herramientas locales de Supabase (el esquema vive en app/supabase)
+/supabase/
