@@ -223,10 +223,9 @@ export default function Dashboard() {
         <div className="mapa-wrap">
           <MapContainer center={[10.4, -75.53]} zoom={11} className="mapa">
             <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-              attribution="&copy; CARTO"
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap contributors"
               maxZoom={19}
-              subdomains="abcd"
             />
             {visibles
               .filter((e) => e.report.lat != null && e.report.lng != null)

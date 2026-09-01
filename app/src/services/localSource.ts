@@ -195,9 +195,13 @@ export class LocalSource implements DataSource {
   }
 
   async login(email: string, password: string): Promise<Session | null> {
-    if (password !== PASSWORD_DEMO) return null;
+    if (password !== PASSWORD_DEMO) {
+      throw new Error(`Contraseña incorrecta — en la demo es "${PASSWORD_DEMO}"`);
+    }
     const profile = this.db.profiles.find((p) => p.email.toLowerCase() === email.toLowerCase());
-    if (!profile) return null;
+    if (!profile) {
+      throw new Error('Email no registrado en la demo — usa los botones de acceso rápido');
+    }
     const session: Session = { profile };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
     return session;

@@ -27,7 +27,8 @@ export type IconName =
   | 'alerta'
   | 'sello'
   | 'diana'
-  | 'descargar';
+  | 'descargar'
+  | 'salida';
 
 const ICONOS: Record<IconName, ReactNode> = {
   bitacora: (
@@ -172,6 +173,13 @@ const ICONOS: Record<IconName, ReactNode> = {
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <path d="m7 10 5 5 5-5" />
       <path d="M12 15V3" />
+    </>
+  ),
+  salida: (
+    <>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
     </>
   ),
 };

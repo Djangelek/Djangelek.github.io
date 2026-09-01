@@ -77,19 +77,24 @@ export default function Header() {
       </nav>
 
       <div className="user-box">
-        <span className="user-name">{session.profile.nombre}</span>
-        <span className={`badge-rol ${rol}`}>{ROL_LABEL[rol]}</span>
-        <button
-          className="btn-icon"
-          title={tema === 'papel' ? 'Cambiar a tema tinta (noche)' : 'Cambiar a tema papel (día)'}
-          aria-label={tema === 'papel' ? 'Cambiar a tema tinta (noche)' : 'Cambiar a tema papel (día)'}
-          onClick={() => setTema(tema === 'papel' ? 'tinta' : 'papel')}
-        >
-          <Icono nombre={tema === 'papel' ? 'luna' : 'sol'} size={18} />
-        </button>
-        <button className="btn-link" onClick={() => void logout()}>
-          Salir
-        </button>
+        <div className="user-info">
+          <span className="user-name">{session.profile.nombre}</span>
+          <span className={`badge-rol ${rol}`}>{ROL_LABEL[rol]}</span>
+        </div>
+        <div className="user-actions">
+          <button
+            className="btn-icon"
+            title={tema === 'papel' ? 'Cambiar a tema tinta (noche)' : 'Cambiar a tema papel (día)'}
+            aria-label={tema === 'papel' ? 'Cambiar a tema tinta (noche)' : 'Cambiar a tema papel (día)'}
+            onClick={() => setTema(tema === 'papel' ? 'tinta' : 'papel')}
+          >
+            <Icono nombre={tema === 'papel' ? 'luna' : 'sol'} size={18} />
+          </button>
+          <button className="btn-salir" onClick={() => void logout()}>
+            <Icono nombre="salida" size={16} />
+            Salir
+          </button>
+        </div>
       </div>
     </header>
   );

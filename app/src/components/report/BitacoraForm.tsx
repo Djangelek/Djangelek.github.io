@@ -150,7 +150,7 @@ export default function BitacoraForm() {
               </option>
             ))}
           </select>
-          <div className="fila-dato" style={{ marginTop: 8 }}>
+          <div className="fila-dato" style={{ marginTop: 8, justifyContent: 'center' }}>
             <span className="rotulo">Fecha</span>
             <span className="dato">{hoy}</span>
           </div>

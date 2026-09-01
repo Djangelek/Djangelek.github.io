@@ -114,10 +114,9 @@ export default function BoatDetail() {
       <div className="mapa-wrap" style={{ height: 460 }}>
         <MapContainer center={puntos[0] ?? [10.4, -75.53]} zoom={12} className="mapa">
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            attribution="&copy; CARTO"
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
             maxZoom={19}
-            subdomains="abcd"
           />
           {puntos.length > 1 && (
             <Polyline positions={puntos} pathOptions={{ color: '#2e6f9e', weight: 4, opacity: 0.85 }} />

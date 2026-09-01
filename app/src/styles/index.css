@@ -252,9 +252,42 @@ body {
 .user-box {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   flex-wrap: wrap;
   font-size: 0.88rem;
+}
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 1px solid var(--linea);
+  padding-left: 14px;
+}
+.btn-salir {
+  min-height: 44px;
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radio-mini);
+  border: 1px solid var(--linea-fuerte);
+  background: var(--papel);
+  color: var(--tinta-suave);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+.btn-salir:hover {
+  border-color: var(--sello);
+  color: var(--sello);
 }
 .user-name {
   font-weight: 800;
@@ -1488,6 +1521,13 @@ input[type='radio'] {
   .brand-tag {
     display: none;
   }
+  .user-actions {
+    border-left: none;
+    padding-left: 0;
+  }
+  .user-info {
+    align-items: flex-start;
+  }
   .user-name {
     max-width: 120px;
   }
@@ -1498,4 +1538,15 @@ input[type='radio'] {
   .bitacora-cabecera {
     padding: 14px 12px;
   }
+}
+
+/* Centrados de las páginas de tripulación (una acción por pantalla) */
+.report-page .con-icono {
+  justify-content: center;
+  text-align: center;
+}
+.gate .btn-link {
+  display: flex;
+  width: fit-content;
+  margin: 0 auto;
 }

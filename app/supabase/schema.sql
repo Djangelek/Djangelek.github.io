@@ -236,10 +236,22 @@ alter table public.bitacoras    enable row level security;
 alter table public.bitacora_tripulantes enable row level security;
 alter table public.reportes     enable row level security;
 
--- Perfiles: cada uno ve el suyo; operación y ventas ven todos.
+-- Perfiles: cada uno ve el suyo; operación y ventas ven todos;
+-- la tripulación ve a sus compañeros de barco (para la bitácora).
 -- SOLO operación actualiza (nadie puede auto-promoverse).
 create policy "profiles_select" on public.profiles
-  for select using (auth.uid() = id or public.rol_actual() in ('operacion','ventas'));
+  for select using (
+    profiles.id = auth.uid()
+    or public.rol_actual() in ('operacion','ventas')
+    or exists (
+      select 1 from public.asignaciones mia
+      where mia.perfil_id = auth.uid()
+        and exists (
+          select 1 from public.asignaciones a2
+          where a2.perfil_id = profiles.id and a2.barco_id = mia.barco_id
+        )
+    )
+  );
 
 create policy "profiles_update" on public.profiles
   for update using (public.rol_actual() = 'operacion');
@@ -295,10 +307,10 @@ create policy "bitacoras_insert" on public.bitacoras
     public.rol_actual() = 'operacion'
     or (
       public.rol_actual() = 'capitan'
-      and capitan_id = auth.uid()
+      and bitacoras.capitan_id = auth.uid()
       and exists (
         select 1 from public.asignaciones a
-        where a.perfil_id = auth.uid() and a.barco_id = barco_id and a.es_capitan
+        where a.perfil_id = auth.uid() and a.barco_id = bitacoras.barco_id and a.es_capitan
       )
     )
   );
@@ -308,8 +320,8 @@ create policy "bitacoras_update" on public.bitacoras
     public.rol_actual() = 'operacion'
     or (
       public.rol_actual() = 'capitan'
-      and capitan_id = auth.uid()
-      and fecha = public.hoy_local()
+      and bitacoras.capitan_id = auth.uid()
+      and bitacoras.fecha = public.hoy_local()
     )
   );
 
@@ -327,7 +339,9 @@ create policy "bitacora_tripulantes_insert" on public.bitacora_tripulantes
       public.rol_actual() = 'capitan'
       and exists (
         select 1 from public.bitacoras b
-        where b.id = bitacora_id and b.capitan_id = auth.uid() and b.fecha = public.hoy_local()
+        where b.id = bitacora_tripulantes.bitacora_id
+          and b.capitan_id = auth.uid()
+          and b.fecha = public.hoy_local()
       )
     )
   );
@@ -339,7 +353,9 @@ create policy "bitacora_tripulantes_delete" on public.bitacora_tripulantes
       public.rol_actual() = 'capitan'
       and exists (
         select 1 from public.bitacoras b
-        where b.id = bitacora_id and b.capitan_id = auth.uid() and b.fecha = public.hoy_local()
+        where b.id = bitacora_tripulantes.bitacora_id
+          and b.capitan_id = auth.uid()
+          and b.fecha = public.hoy_local()
       )
     )
   );
@@ -355,18 +371,18 @@ create policy "reportes_select" on public.reportes
 
 create policy "reportes_insert" on public.reportes
   for insert with check (
-    auth.uid() = operador_id
+    auth.uid() = reportes.operador_id
     and (
       public.rol_actual() = 'operacion'
       or (
         public.rol_actual() in ('capitan','marinero')
         and exists (
           select 1 from public.asignaciones a
-          where a.perfil_id = auth.uid() and a.barco_id = barco_id
+          where a.perfil_id = auth.uid() and a.barco_id = reportes.barco_id
         )
         and exists (
           select 1 from public.bitacoras b
-          where b.barco_id = barco_id and b.fecha = public.hoy_local()
+          where b.barco_id = reportes.barco_id and b.fecha = public.hoy_local()
         )
       )
     )
@@ -376,15 +392,15 @@ create policy "reportes_update" on public.reportes
   for update using (
     public.rol_actual() = 'operacion'
     or (
-      operador_id = auth.uid()
+      reportes.operador_id = auth.uid()
       and public.rol_actual() in ('capitan','marinero')
       and exists (
         select 1 from public.asignaciones a
-        where a.perfil_id = auth.uid() and a.barco_id = barco_id
+        where a.perfil_id = auth.uid() and a.barco_id = reportes.barco_id
       )
       and exists (
         select 1 from public.bitacoras b
-        where b.barco_id = barco_id and b.fecha = public.hoy_local()
+        where b.barco_id = reportes.barco_id and b.fecha = public.hoy_local()
       )
     )
   );

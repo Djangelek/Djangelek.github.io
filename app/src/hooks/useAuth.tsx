@@ -22,10 +22,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string): Promise<string | null> {
-    const s = await ds.login(email, password);
-    if (!s) return 'Credenciales inválidas';
-    setSession(s);
-    return null;
+    try {
+      const s = await ds.login(email, password);
+      if (!s) return 'Credenciales inválidas';
+      setSession(s);
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : 'Credenciales inválidas';
+    }
   }
 
   async function logout(): Promise<void> {
