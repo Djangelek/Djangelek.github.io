@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-01T19:28:45.028Z",
+  "title": "Design System: Colombia Navega · El Manifiesto",
+  "extensions": {
+    "colorMeta": {
+      "tinta": { "role": "primary", "displayName": "Tinta índigo", "canonical": "#1c2b4a", "tonalRamp": ["oklch(18% 0.060 263.6)", "oklch(30% 0.060 263.6)", "oklch(42% 0.060 263.6)", "oklch(54% 0.060 263.6)", "oklch(66% 0.060 263.6)", "oklch(76% 0.060 263.6)", "oklch(86% 0.060 263.6)", "oklch(95% 0.060 263.6)"] },
+      "etiqueta": { "role": "secondary", "displayName": "Etiqueta teal", "canonical": "#0e7c7b", "tonalRamp": ["oklch(18% 0.088 193.8)", "oklch(30% 0.088 193.8)", "oklch(42% 0.088 193.8)", "oklch(54% 0.088 193.8)", "oklch(66% 0.088 193.8)", "oklch(76% 0.088 193.8)", "oklch(86% 0.088 193.8)", "oklch(95% 0.088 193.8)"] },
+      "sello": { "role": "tertiary", "displayName": "Sello rojo", "canonical": "#c8452c", "tonalRamp": ["oklch(18% 0.171 32.9)", "oklch(30% 0.171 32.9)", "oklch(42% 0.171 32.9)", "oklch(54% 0.171 32.9)", "oklch(66% 0.171 32.9)", "oklch(76% 0.171 32.9)", "oklch(86% 0.171 32.9)", "oklch(95% 0.171 32.9)"] },
+      "mar": { "role": "semantic", "displayName": "Mar", "canonical": "#2e6f9e", "tonalRamp": ["oklch(18% 0.099 243.4)", "oklch(30% 0.099 243.4)", "oklch(42% 0.099 243.4)", "oklch(54% 0.099 243.4)", "oklch(66% 0.099 243.4)", "oklch(76% 0.099 243.4)", "oklch(86% 0.099 243.4)", "oklch(95% 0.099 243.4)"] },
+      "puerto": { "role": "semantic", "displayName": "Puerto", "canonical": "#2f7d4f", "tonalRamp": ["oklch(18% 0.106 154.4)", "oklch(30% 0.106 154.4)", "oklch(42% 0.106 154.4)", "oklch(54% 0.106 154.4)", "oklch(66% 0.106 154.4)", "oklch(76% 0.106 154.4)", "oklch(86% 0.106 154.4)", "oklch(95% 0.106 154.4)"] },
+      "ambar": { "role": "semantic", "displayName": "Ámbar", "canonical": "#7c4f0b", "note": "Oscurecido a #7c4f0b (tema papel) para AA como texto; el tema tinta usa #e8b04c.", "tonalRamp": ["oklch(18% 0.125 70.4)", "oklch(30% 0.125 70.4)", "oklch(42% 0.125 70.4)", "oklch(54% 0.125 70.4)", "oklch(66% 0.125 70.4)", "oklch(76% 0.125 70.4)", "oklch(86% 0.125 70.4)", "oklch(95% 0.125 70.4)"] },
+      "papel": { "role": "neutral", "displayName": "Papel", "canonical": "#f6f3ea", "tonalRamp": ["oklch(18% 0.012 91.5)", "oklch(30% 0.012 91.5)", "oklch(42% 0.012 91.5)", "oklch(54% 0.012 91.5)", "oklch(66% 0.012 91.5)", "oklch(76% 0.012 91.5)", "oklch(86% 0.012 91.5)", "oklch(95% 0.012 91.5)"] },
+      "papel-alto": { "role": "neutral", "displayName": "Papel alto", "canonical": "#fbf9f1" },
+      "papel-hondo": { "role": "neutral", "displayName": "Papel hondo", "canonical": "#ece6d4" },
+      "tinta-suave": { "role": "neutral", "displayName": "Tinta suave", "canonical": "#4a5874" },
+      "tinta-tenue": { "role": "neutral", "displayName": "Tinta tenue", "canonical": "#5f6c88" },
+      "linea": { "role": "neutral", "displayName": "Línea", "canonical": "rgba(28, 43, 74, 0.16)" },
+      "linea-fuerte": { "role": "neutral", "displayName": "Línea fuerte", "canonical": "rgba(28, 43, 74, 0.38)" },
+      "ok-fondo": { "role": "semantic", "displayName": "Éxito fondo", "canonical": "#e3efdf" },
+      "ok-texto": { "role": "semantic", "displayName": "Éxito texto", "canonical": "#1f5c3d" },
+      "err-fondo": { "role": "semantic", "displayName": "Error fondo", "canonical": "#f8e2db" },
+      "err-texto": { "role": "semantic", "displayName": "Error texto", "canonical": "#8c2f1d" },
+      "info-fondo": { "role": "semantic", "displayName": "Info fondo", "canonical": "#dfe9f2" },
+      "info-texto": { "role": "semantic", "displayName": "Info texto", "canonical": "#1f4e72" },
+      "aviso-fondo": { "role": "semantic", "displayName": "Aviso fondo", "canonical": "#f6ead2" },
+      "aviso-texto": { "role": "semantic", "displayName": "Aviso texto", "canonical": "#7a4b0e" },
+      "foco": { "role": "semantic", "displayName": "Foco", "canonical": "#0e7c7b" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Títulos de página y sección (h1/h2)." },
+      "title": { "displayName": "Title", "purpose": "Subtítulos y títulos de hoja (h3, .hoja-titulo)." },
+      "body": { "displayName": "Body", "purpose": "Contenido; filas y listas bajan a 0.85–0.9rem." },
+      "label": { "displayName": "Label", "purpose": "Labels de campo, rótulos, cabeceras de tabla; mayúsculas con letter-spacing." },
+      "data": { "displayName": "Data", "purpose": "Números, horas, coordenadas y contadores en mono tabular." }
+    },
+    "shadows": [
+      { "name": "sombra", "value": "0 1px 2px rgba(28,43,74,0.08), 0 10px 26px rgba(28,43,74,0.10)", "purpose": "Hojas, tarjetas, header, hover de filas." },
+      { "name": "sombra-alta", "value": "0 2px 6px rgba(28,43,74,0.12), 0 18px 44px rgba(28,43,74,0.18)", "purpose": "Login, popups Leaflet, toasts." },
+      { "name": "barra-enviar", "value": "0 -8px 24px rgba(28,43,74,0.14)", "purpose": "Sombra hacia arriba de la barra de envío fija." },
+      { "name": "btn-stamp", "value": "0 2px 4px rgba(28,43,74,0.18)", "purpose": "Presión del botón sello." },
+      { "name": "btn-stamp-hover", "value": "0 4px 10px rgba(28,43,74,0.25)", "purpose": "Sello levantado en hover." }
+    ],
+    "motion": [
+      { "name": "ease-fast", "value": "140ms ease", "purpose": "Botón sello y chips (transform, box-shadow)." },
+      { "name": "ease-standard", "value": "150ms ease", "purpose": "Transiciones de estado: bordes, fondo, pestañas, inputs." },
+      { "name": "ease-theme", "value": "180ms ease", "purpose": "Cambio de tema fondo/color." },
+      { "name": "toast-in", "value": "220ms ease-out", "purpose": "Entrada de toasts." },
+      { "name": "sello-cae", "value": "240ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Caída y aterrizaje del sello." },
+      { "name": "shimmer", "value": "1.4s ease infinite", "purpose": "Esqueleto de carga." },
+      { "name": "gps-pulse", "value": "1.6s ease-out infinite", "purpose": "Pulso del marcador GPS en movimiento." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "900px" },
+      { "name": "lg", "value": "1000px" },
+      { "name": "xl", "value": "1100px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (sello)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "El sello que se presiona: la acción primaria de cada pantalla, tinta sobre papel.",
+      "html": "<button class='ds-btn-primary'>Sellar bitácora</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;padding:14px 22px;background:var(--tinta);color:var(--papel-alto);border:1px solid var(--tinta);border-radius:var(--radio);font-family:var(--sans);font-size:1rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer;box-shadow:0 2px 4px rgba(28,43,74,0.18);transition:transform 140ms ease,box-shadow 140ms ease,background-color 140ms ease}.ds-btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 10px rgba(28,43,74,0.25)}.ds-btn-primary:active:not(:disabled){transform:translateY(0)}.ds-btn-primary:focus-visible{outline:3px solid var(--foco);outline-offset:2px}.ds-btn-primary:disabled{opacity:0.45;cursor:not-allowed}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción secundaria sobre papel alto con borde de línea; el hover tiñe el borde de etiqueta.",
+      "html": "<button class='ds-btn-secondary'>Cancelar</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:10px 18px;background:var(--papel-alto);color:var(--tinta);border:1.5px solid var(--linea-fuerte);border-radius:var(--radio-mini);font-family:var(--sans);font-size:0.92rem;font-weight:700;cursor:pointer;transition:border-color 150ms ease,background-color 150ms ease}.ds-btn-secondary:hover{border-color:var(--etiqueta)}.ds-btn-secondary:focus-visible{outline:3px solid var(--foco);outline-offset:2px}"
+    },
+    {
+      "name": "Field + Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de formulario: label en mayúsculas sobre input de papel con borde de línea fuerte.",
+      "html": "<label class='ds-field'><span>Número de pasajeros</span><input type='number' placeholder='0'></label>",
+      "css": ".ds-field{display:block;font-family:var(--sans)}.ds-field span{display:block;font-weight:800;margin-bottom:7px;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--tinta-suave)}.ds-field input{width:100%;min-height:48px;padding:12px 14px;font-size:1rem;font-family:var(--sans);color:var(--tinta);border-radius:var(--radio-mini);border:1.5px solid var(--linea-fuerte);background:var(--papel);transition:border-color 150ms ease,box-shadow 150ms ease}.ds-field input::placeholder{color:var(--tinta-tenue)}.ds-field input:focus{outline:none;border-color:var(--foco);box-shadow:0 0 0 3px color-mix(in srgb, var(--foco) 25%, transparent)}"
+    },
+    {
+      "name": "State Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Selector grande de estado/actividad; el seleccionado se hunde en papel hondo con borde del color.",
+      "html": "<button class='ds-chip ds-chip-sel'><span class='ds-dot' style='background:#0e7c7b'></span>En navegación</button>",
+      "css": ".ds-chip{display:flex;align-items:center;gap:10px;min-height:56px;padding:12px 14px;border-radius:var(--radio-mini);border:1.5px solid var(--linea-fuerte);background:var(--papel);cursor:pointer;font-family:var(--sans);font-weight:800;font-size:0.95rem;color:var(--tinta);text-align:left;transition:border-color 140ms ease,background-color 140ms ease,transform 140ms ease}.ds-chip:hover{border-color:var(--etiqueta)}.ds-chip-sel{border-width:2px;background:var(--papel-hondo);transform:translateY(-1px)}.ds-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:1px solid color-mix(in srgb, var(--tinta) 25%, transparent)}"
+    },
+    {
+      "name": "Estado Tag",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Etiqueta píldora de fila con punto de color del estado; el color lo dicta operaciones.",
+      "html": "<span class='ds-tag'><span class='ds-dot' style='background:#2f7d4f'></span>En puerto</span>",
+      "css": ".ds-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:0.75rem;font-weight:800;padding:4px 10px;border-radius:999px;border:1.5px solid var(--linea-fuerte);background:var(--papel-alto);color:var(--tinta);white-space:nowrap}.ds-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:1px solid color-mix(in srgb, var(--tinta) 25%, transparent)}"
+    },
+    {
+      "name": "Hoja (sheet)",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "La hoja de papel del manifiesto; el título cierra con el perforado de talonario.",
+      "html": "<div class='ds-sheet'><div class='ds-sheet-title'>Bitácora del día</div><p>Entrada del libro de a bordo.</p></div>",
+      "css": ".ds-sheet{background:var(--papel-alto);border:1px solid var(--linea);border-radius:var(--radio);padding:18px 16px;box-shadow:var(--sombra);font-family:var(--sans);color:var(--tinta)}.ds-sheet p{margin:0;color:var(--tinta-suave)}.ds-sheet-title{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px 0;padding-bottom:12px;border-bottom:2px dashed var(--linea-fuerte);font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em}"
+    },
+    {
+      "name": "Stat tile",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Contador de manifiesto: cifra grande en mono tabular sobre rótulo en mayúsculas.",
+      "html": "<div class='ds-stat'><b>12</b><span>Barcos activos</span></div>",
+      "css": ".ds-stat{background:var(--papel-alto);border:1px solid var(--linea);border-bottom:3px double var(--linea-fuerte);border-radius:var(--radio-mini);padding:12px 14px;font-family:var(--sans)}.ds-stat b{display:block;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.6rem;color:var(--tinta);line-height:1.1}.ds-stat span{font-size:0.72rem;color:var(--tinta-tenue);font-weight:800;text-transform:uppercase;letter-spacing:0.06em}"
+    },
+    {
+      "name": "Sello (stamp)",
+      "kind": "custom",
+      "refersTo": "sello",
+      "description": "La firma del sistema: borde grueso, radio apretado y rotación fija de −3° como estampado a mano.",
+      "html": "<span class='ds-sello ds-sello-ok'>Día abierto ✔</span>",
+      "css": ".ds-sello{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:2.5px solid var(--sello);border-radius:6px;color:var(--sello);font-family:var(--sans);font-weight:800;text-transform:uppercase;letter-spacing:0.1em;font-size:0.78rem;transform:rotate(-3deg);background:transparent}.ds-sello-ok{border-color:var(--puerto);color:var(--puerto)}.ds-sello.cae{animation:ds-sello-cae 240ms cubic-bezier(0.16,1,0.3,1)}@keyframes ds-sello-cae{0%{opacity:0;transform:rotate(-3deg) scale(1.45)}100%{opacity:1;transform:rotate(-3deg) scale(1)}}"
+    },
+    {
+      "name": "Boat row",
+      "kind": "custom",
+      "refersTo": "boat-row",
+      "description": "Fila de manifiesto por barco: estado, lugar y cifras en mono tabular; levanta 1px en hover.",
+      "html": "<a class='ds-boat'><div class='ds-boat-header'><span class='ds-boat-title'>Yate Cahua</span><span class='ds-tag'><span class='ds-dot' style='background:#2e6f9e'></span>En navegación</span></div><div class='ds-boat-place'>📍 Isla Grande</div><div class='ds-boat-info'><span><b>18</b> pax</span><span><b>4</b> maletas</span></div><div class='ds-boat-time'>10:24 · hace 2 min</div></a>",
+      "css": ".ds-boat{display:block;width:100%;text-align:left;background:var(--papel-alto);border:1px solid var(--linea);border-radius:var(--radio-mini);padding:12px;cursor:pointer;color:var(--tinta);font-family:var(--sans);text-decoration:none;transition:transform 150ms ease,box-shadow 150ms ease,border-color 150ms ease}.ds-boat:hover{transform:translateY(-1px);border-color:var(--linea-fuerte);box-shadow:var(--sombra)}.ds-boat-header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}.ds-boat-title{font-weight:800;font-size:1rem}.ds-boat-place{font-size:0.88rem;font-weight:600;color:var(--tinta-suave);margin-bottom:6px}.ds-boat-info{font-size:0.82rem;color:var(--tinta-suave);display:flex;gap:12px;flex-wrap:wrap}.ds-boat-info b{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--tinta)}.ds-boat-time{font-size:0.76rem;color:var(--tinta-tenue);margin-top:4px;font-family:var(--mono);font-variant-numeric:tabular-nums}.ds-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:0.75rem;font-weight:800;padding:4px 10px;border-radius:999px;border:1.5px solid var(--linea-fuerte);background:var(--papel-alto);white-space:nowrap}.ds-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:1px solid color-mix(in srgb, var(--tinta) 25%, transparent)}"
+    },
+    {
+      "name": "Gate",
+      "kind": "custom",
+      "refersTo": "gate",
+      "description": "Bloqueo de bitácora pendiente: papel en blanco que espera sello, con una única acción.",
+      "html": "<div class='ds-gate'><span class='ds-gate-icon'>📋</span><p>Tu día aún no está abierto. Séllala y se habilitan los reportes.</p><button class='ds-gate-btn'>Hacer check bitácora</button></div>",
+      "css": ".ds-gate{border:2px dashed var(--linea-fuerte);border-radius:var(--radio);background:var(--papel-alto);padding:26px 20px;text-align:center;font-family:var(--sans);color:var(--tinta)}.ds-gate-icon{font-size:2.2rem;display:block;margin-bottom:8px}.ds-gate p{margin:6px 0 14px 0;color:var(--tinta-suave);font-weight:600}.ds-gate-btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:14px 22px;max-width:340px;width:100%;background:var(--tinta);color:var(--papel-alto);border:1px solid var(--tinta);border-radius:var(--radio);font-family:var(--sans);font-size:1rem;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer;box-shadow:0 2px 4px rgba(28,43,74,0.18);transition:transform 140ms ease,box-shadow 140ms ease}.ds-gate-btn:hover{transform:translateY(-1px);box-shadow:0 4px 10px rgba(28,43,74,0.25)}.ds-gate-btn:focus-visible{outline:3px solid var(--foco);outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "El Manifiesto",
+    "overview": "La interfaz entera se trata como el manifiesto de embarque de una flota náutica: un papel de manifiesto tibio que cada barco debe llenar y sellar cada mañana. No hay tarjetas SaaS; hay hojas de papel (#f6f3ea) escritas con tinta índigo (#1c2b4a) y selladas con un sello rojo (#c8452c). Cada dato es una entrada del libro del día, en monoespaciado tabular, y cada quiebre de sección es el borde perforado de talonario (raya discontinua de 2px). Se rechaza explícitamente el dashboard genérico de sidebar y tarjetas: el mundo visual es un cuaderno de a bordo.\n\nLa tinta índigo es la voz (texto y botón primario); el papel tibio es siempre el suelo; el sello rojo y las etiquetas de estado son los únicos acentos que entran en color. El tema nocturno \"tinta\" invierte el papel por tinta y la tinta por papel, para mar abierto de noche. Los datos viven en font-variant-numeric: tabular-nums para que columnas de cifras alineen como un libro de cuentas.",
+    "keyCharacteristics": [
+      "Mundo de papel de manifiesto, no dashboard SaaS de tarjetas.",
+      "Tinta índigo sobre papel tibio; sello rojo como único acento fuerte.",
+      "Perforado de talonario (raya discontinua de 2px) como divisor de secciones.",
+      "Monoespaciado tabular para todo dato numérico/horario; etiquetas en mayúsculas.",
+      "Dos temas: papel (día, sol caribeño) y tinta (noche, invertido).",
+      "Móvil de tripulación: una acción por pantalla y barra de envío fija; escritorio de supervisión: mostrador de tres zonas."
+    ],
+    "rules": [
+      { "name": "The Paper-Ground Rule", "body": "Todo se asienta sobre papel / papel-alto / papel-hondo. No existe blanco puro ni negro puro en ninguna superficie; el papel siempre tiene tibieza.", "section": "colors" },
+      { "name": "The Stamp Rarity Rule", "body": "El sello rojo (#c8452c) solo entra como sello, alerta o acción destructiva. Nunca inunda una superficie; su escasez es el mensaje.", "section": "colors" },
+      { "name": "The Tabular Ledger Rule", "body": "Todo número, hora, coordenada o conteo se renderiza en la pila mono con tabular-nums, para que las columnas alineen como un libro de cuentas.", "section": "typography" },
+      { "name": "The Uppercase Label Rule", "body": "Labels, títulos de sección y botones van en mayúsculas con letter-spacing (0.05–0.08em). Nunca en estilo oración para el cromado.", "section": "typography" },
+      { "name": "The Flat-by-Default Rule", "body": "Las superficies están planas en reposo. La sombra aparece solo como respuesta a un estado (hover que levanta 1px, foco, popup flotante). Ninguna hoja lleva sombra decorativa permanente.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do asentar toda superficie sobre el trío papel / papel-alto / papel-hondo; nunca blanco puro ni negro puro.",
+      "Do renderizar cifras, horas y coordenadas en mono con tabular-nums (la Regla del Libro de Cuentas).",
+      "Do usar el perforado de 2px dashed (--linea-fuerte) para dividir secciones de una hoja, no reglas sólidas.",
+      "Do poner labels, títulos de sección y botones en MAYÚSCULAS con letter-spacing (0.05–0.08em).",
+      "Do referenciar solo var(--…) para que los temas papel y tinta resuelvan solos; nunca hardcodear un valor de un tema.",
+      "Do acotar la experiencia móvil a .report-page (620px) con una sola .btn-stamp en .barra-enviar fija.",
+      "Do marcar cada estado de barco con .estado-dot del color administrado por operaciones."
+    ],
+    "donts": [
+      "Don't introducir tarjetas SaaS de borde duro ni sidebar genérico; el mundo es papel de manifiesto.",
+      "Don't usar el sello rojo (#c8452c) como acento genérico; está reservado a sello, alerta y destrucción.",
+      "Don't agregar un color de estado fuera del sistema administrado; los estados entran por .estado-dot con su propio color.",
+      "Don't setear datos numéricos en la pila sans; deben ser mono tabular.",
+      "Don't reemplazar el perforado dashed por bordes sólidos en los divisores de hoja/título.",
+      "Don't usar sombras permanentes decorativas; la elevación es por capas tonales y la sombra responde al estado."
+    ]
+  }
+}

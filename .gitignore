@@ -20,3 +20,25 @@
 .impeccable/live/deferred-svelte-component-accepts.json
 .impeccable/live/*.png
 # impeccable-ignore-end
+
+# Datos GPS extraidos - no publicar (contienen posiciones de los barcos)
+gps-scraper/output/
+
+
+# Ruflo local secrets and runtime data
+.env
+.env.local
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+.claude-flow/daemon-state.json
+.claude-flow/harness-active-policy.json
+.claude-flow/metrics/
+.claude-flow/policy/
+.claude-flow/security/
+.swarm/
+
+# Artefactos efímeros de la herramienta de diseño (impeccable)
+.impeccable/question-*.json
+.impeccable/review/
