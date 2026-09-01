@@ -15,8 +15,8 @@ export default defineConfig({
         description:
           'Control de flota náutica — reportes de capitanes, mapa en tiempo real y exportación a Excel.',
         lang: 'es',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#f6f3ea',
+        background_color: '#f6f3ea',
         display: 'standalone',
         orientation: 'portrait',
         start_url: './',
