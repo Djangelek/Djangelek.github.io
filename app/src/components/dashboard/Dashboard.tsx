@@ -2,13 +2,16 @@ import { useMemo, useState, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useBarcos, useBitacorasDeHoy, useEstados, useFleet } from '../../hooks/useFleet';
+import { useGpsPositions } from '../../hooks/useGpsPositions';
 import { useReportNotifications } from '../../hooks/useReportNotifications';
-import MapaNautico, { GpsStatusChip } from '../map/MapaNautico';
+import MapaNautico, { GpsStatusChip, type MarcadorMapa } from '../map/MapaNautico';
 import { ds } from '../../services';
+import { normalizarNombre } from '../../services/gps';
 import { useUIStore } from '../../store/uiStore';
 import { formatFechaDia, formatHora, hace, hoyLocalISO } from '../../utils/format';
 import { Icono } from '../ui/Iconos';
 import type { FleetEntry } from '../../types';
+import type { GpsBoat } from '../../types/gps';
 
 /**
  * EL MOSTRADOR — supervisión de operación y ventas en escritorio amplio:
@@ -20,6 +23,7 @@ export default function Dashboard() {
   const { data: barcos = [] } = useBarcos();
   const { data: estados = [] } = useEstados();
   const { data: bitacorasHoy = [] } = useBitacorasDeHoy();
+  const { data: gps } = useGpsPositions();
   const { session } = useAuth();
   const esOperacion = session?.profile.rol === 'operacion';
 
@@ -35,6 +39,79 @@ export default function Dashboard() {
 
   const [filtroEstado, setFiltroEstado] = useState('');
   const [busqueda, setBusqueda] = useState('');
+  const [enfoque, setEnfoque] = useState<{ lat: number; lng: number } | null>(null);
+
+  // GPS en vivo emparejado a los barcos por nombre (normalizado).
+  const gpsPorBarco = useMemo(() => {
+    const mapa = new Map<string, { item: GpsBoat }>();
+    for (const item of gps?.items ?? []) {
+      if (item.lat == null || item.lng == null) continue;
+      const barco = barcos.find((b) => normalizarNombre(b.nombre) === normalizarNombre(item.name));
+      if (barco) mapa.set(barco.id, { item });
+    }
+    return mapa;
+  }, [gps, barcos]);
+
+  // Un marcador por barco: GPS en vivo si existe; si no, el último reporte.
+  const marcadores = useMemo<MarcadorMapa[]>(() => {
+    const out: MarcadorMapa[] = [];
+    for (const [barcoId, { item }] of gpsPorBarco) {
+      const barco = barcos.find((b) => b.id === barcoId);
+      const entry = entries.find((e) => e.barco.id === barcoId);
+      const color = gpsColor(item);
+      out.push({
+        lat: item.lat as number,
+        lng: item.lng as number,
+        color,
+        tipo: 'gps',
+        speed: item.speed,
+        course: item.course,
+        name: item.name,
+        html:
+          `<div class="popup"><b>${item.name}</b>` +
+          `<div>Estado GPS: <b style="color:${color}">${gpsTexto(item)}</b></div>` +
+          `<div>Velocidad: <b style="color:${color}">${item.speed != null ? `${item.speed} nudos` : '—'}</b>${item.course != null ? ` · rumbo ${item.course}°` : ''}</div>` +
+          (entry
+            ? `<div>Último reporte: <b style="color:${entry.estado?.color}">${entry.estado?.nombre ?? '—'}</b> · ${entry.report.lugar || '—'}</div>`
+            : '') +
+          `<div class="muted">${item.time ? hace(item.time) : 'sin hora'} · GPS</div>` +
+          `<a href="#/barco/${barcoId}">Historial y recorrido →</a></div>`,
+      });
+    }
+    for (const e of entries) {
+      if (gpsPorBarco.has(e.barco.id)) continue;
+      if (e.report.lat == null || e.report.lng == null) continue;
+      out.push({
+        lat: e.report.lat,
+        lng: e.report.lng,
+        color: e.estado?.color ?? '#38bdf8',
+        tipo: 'reporte',
+        html:
+          `<div class="popup"><b>${e.barco.nombre}</b>` +
+          `<div>Estado: <b style="color:${e.estado?.color};display:inline">${e.estado?.nombre ?? '—'}</b></div>` +
+          `<div>Lugar: ${e.report.lugar || '—'}</div>` +
+          `<div>PAX: ${e.report.pasajeros} · Maletas: ${e.report.maletas} · Bolsos: ${e.report.bolsos}</div>` +
+          `<div class="muted">${formatHora(e.report.created_at)} · ${hace(e.report.created_at)} · último reporte</div>` +
+          `<a href="#/barco/${e.barco.id}">Historial y recorrido →</a></div>`,
+      });
+    }
+    return out;
+  }, [gpsPorBarco, barcos, entries]);
+
+  function posicionDe(barcoId: string): { lat: number; lng: number } | null {
+    const g = gpsPorBarco.get(barcoId);
+    if (g) return { lat: g.item.lat as number, lng: g.item.lng as number };
+    const e = entries.find((x) => x.barco.id === barcoId);
+    if (e && e.report.lat != null && e.report.lng != null) {
+      return { lat: e.report.lat, lng: e.report.lng };
+    }
+    return null;
+  }
+
+  function centrarBarco(barcoId: string) {
+    const p = posicionDe(barcoId);
+    if (p) setEnfoque(p);
+  }
 
   const visibles = useMemo(
     () =>
@@ -204,7 +281,12 @@ export default function Dashboard() {
               <div className="muted center pad">No hay barcos que coincidan.</div>
             )}
             {visibles.map((e) => (
-              <BoatRow key={e.barco.id} entry={e} esOperacion={esOperacion} />
+              <BoatRow
+                key={e.barco.id}
+                entry={e}
+                esOperacion={esOperacion}
+                onCentrar={centrarBarco}
+              />
             ))}
           </div>
         </div>
@@ -213,39 +295,8 @@ export default function Dashboard() {
           <MapaNautico
             centro={[10.4, -75.53]}
             zoom={11}
-            marcadores={[
-              ...visibles
-                .filter((e) => e.report.lat != null && e.report.lng != null)
-                .map((e) => ({
-                  lat: e.report.lat as number,
-                  lng: e.report.lng as number,
-                  color: e.estado?.color ?? '#38bdf8',
-                  html:
-                    `<div class="popup"><b>${e.barco.nombre}</b>` +
-                    `<div>Estado: <b style="color:${e.estado?.color};display:inline">${e.estado?.nombre ?? '—'}</b></div>` +
-                    `<div>Lugar: ${e.report.lugar || '—'}</div>` +
-                    `<div>PAX: ${e.report.pasajeros} · Maletas: ${e.report.maletas} · Bolsos: ${e.report.bolsos}</div>` +
-                    `<div class="muted">${formatHora(e.report.created_at)} · ${hace(e.report.created_at)}</div>` +
-                    `<a href="#/barco/${e.barco.id}">Ver bitácora del día →</a></div>`,
-                })),
-              // Bitácora: dónde se abrió el día (última posición disponible si no hay reporte)
-              ...bitacorasHoy
-                .filter((b) => b.lat != null && b.lng != null)
-                .map((b) => {
-                  const barco = barcos.find((x) => x.id === b.barco_id);
-                  return {
-                    lat: b.lat as number,
-                    lng: b.lng as number,
-                    color: '#185a9c',
-                    html:
-                      `<div class="popup"><b>${barco?.nombre ?? 'Barco'} · Bitácora</b>` +
-                      `<div>Día abierto en: ${b.lat!.toFixed(5)}, ${b.lng!.toFixed(5)}</div>` +
-                      `<div>PAX: ${b.pasajeros} · Combustible: ${b.combustible ?? '—'}%</div>` +
-                      `<div class="muted">${formatHora(b.created_at)} · ${hace(b.created_at)}</div>` +
-                      `<a href="#/barco/${b.barco_id}">Ver detalle →</a></div>`,
-                  };
-                }),
-            ]}
+            marcadores={marcadores}
+            enfoque={enfoque}
           />
         </div>
 
@@ -295,7 +346,15 @@ export default function Dashboard() {
   );
 }
 
-function BoatRow({ entry, esOperacion }: { entry: FleetEntry; esOperacion: boolean }) {
+function BoatRow({
+  entry,
+  esOperacion,
+  onCentrar,
+}: {
+  entry: FleetEntry;
+  esOperacion: boolean;
+  onCentrar: (barcoId: string) => void;
+}) {
   const { report, barco, estado, operador } = entry;
   const pushToast = useUIStore((s) => s.pushToast);
 
@@ -311,7 +370,16 @@ function BoatRow({ entry, esOperacion }: { entry: FleetEntry; esOperacion: boole
   }
 
   return (
-    <Link to={`/barco/${barco.id}`} className="boat-row" style={{ textDecoration: 'none' }}>
+    <div
+      className="boat-row"
+      role="button"
+      tabIndex={0}
+      style={{ cursor: 'pointer' }}
+      onClick={() => onCentrar(barco.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onCentrar(barco.id);
+      }}
+    >
       {esOperacion && (
         <button
           className="btn-delete"
@@ -348,6 +416,18 @@ function BoatRow({ entry, esOperacion }: { entry: FleetEntry; esOperacion: boole
         {formatHora(report.created_at)} · {hace(report.created_at)}
         {operador ? ` · ${operador.nombre}` : ''}
       </div>
-    </Link>
+    </div>
   );
+}
+
+function gpsColor(b: GpsBoat): string {
+  if (b.online === 'online') return '#22c55e';
+  if (b.online === 'offline') return '#ef4444';
+  return '#f59e0b';
+}
+
+function gpsTexto(b: GpsBoat): string {
+  if (b.online === 'online') return 'En movimiento';
+  if (b.online === 'offline') return 'Sin señal';
+  return 'Conectado';
 }

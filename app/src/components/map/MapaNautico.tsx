@@ -7,20 +7,16 @@ import {
   type StyleSpecification,
 } from 'maplibre-gl';
 import { useGpsPositions } from '../../hooks/useGpsPositions';
-import { useBarcos } from '../../hooks/useFleet';
-import { gpsEnabled, normalizarNombre } from '../../services/gps';
+import { gpsEnabled } from '../../services/gps';
 import { hace } from '../../utils/format';
 import { svgAnclaBlanco } from '../ui/Iconos';
-import type { GpsBoat } from '../../types/gps';
 
 /**
- * MAPA NÁUTICO VECTORIAL (MapLibre + Protomaps, sin clave):
- * - Base OSM vectorizada de Protomaps, con el estilo FILTRADO:
- *   se ocultan calles, edificios y transporte; se conservan agua,
- *   costa, límites, nombres de lugares y POIs.
- * - Capa OpenSeaMap (boyas/faros) encima.
- * - Marcadores de flota, GPS en vivo y ruta náutica punteada.
- * - Si el estilo remoto falla, cae a raster OSM simple (nunca se rompe).
+ * MAPA NÁUTICO VECTORIAL (MapLibre + Protomaps, sin clave).
+ * - Render puro de marcadores: recibe `marcadores` ya mezclados
+ *   (GPS en vivo si existe, si no el último reporte/bitácora).
+ * - Al montar ajusta el encuadre para mostrar TODOS los marcadores.
+ * - `enfoque` centra el mapa en un barco (clic en la flota).
  */
 
 export interface MarcadorMapa {
@@ -28,35 +24,30 @@ export interface MarcadorMapa {
   lng: number;
   color: string;
   html: string;
+  /** 'gps' = ancla de rastreador en vivo; por defecto = punto de flota. */
+  tipo?: 'gps' | 'reporte' | 'bitacora';
+  speed?: number | null;
+  course?: number | null;
+  name?: string;
 }
 
 interface Props {
-  centro: [number, number];
+  centro: [number, number]; // [lat, lng]
   zoom: number;
   marcadores?: MarcadorMapa[];
-  ruta?: [number, number][];
+  ruta?: [number, number][]; // [lat, lng][]
+  enfoque?: { lat: number; lng: number } | null;
 }
 
 const ESTILO_URL = 'https://protomaps.github.io/basemaps/assets/tiles.json';
-// Capas que ocultamos del estilo base (calles, edificios, transporte)
 const OCULTAR = /roads?|buildings?|transit|aeroway/i;
 
 function estiloRaster(): StyleSpecification {
   return {
     version: 8,
     sources: {
-      osm: {
-        type: 'raster',
-        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        attribution: '&copy; OpenStreetMap contributors',
-      },
-      openseamap: {
-        type: 'raster',
-        tiles: ['https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        attribution: '&copy; OpenSeaMap contributors',
-      },
+      osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; OpenStreetMap contributors' },
+      openseamap: { type: 'raster', tiles: ['https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; OpenSeaMap contributors' },
     },
     layers: [
       { id: 'osm', type: 'raster', source: 'osm' },
@@ -71,22 +62,21 @@ async function estiloNautico(): Promise<StyleSpecification> {
   estilo.layers = (estilo.layers ?? []).filter(
     (l) => !OCULTAR.test(l.id ?? '') && !OCULTAR.test((l as { 'source-layer'?: string })['source-layer'] ?? ''),
   );
-  // Capa OpenSeaMap encima de todo (transparente: deja ver nombres y POIs)
-  estilo.sources = { ...(estilo.sources ?? {}), openseamap: { type: 'raster', tiles: ['https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; OpenSeaMap contributors' } };
+  estilo.sources = {
+    ...(estilo.sources ?? {}),
+    openseamap: { type: 'raster', tiles: ['https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; OpenSeaMap contributors' },
+  };
   estilo.layers.push({ id: 'openseamap', type: 'raster', source: 'openseamap' });
   return estilo;
 }
 
-export default function MapaNautico({ centro, zoom, marcadores = [], ruta }: Props) {
+export default function MapaNautico({ centro, zoom, marcadores = [], ruta, enfoque }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapLibreMap | null>(null);
   const [estilo, setEstilo] = useState<StyleSpecification | null>(null);
   const [mapListo, setMapListo] = useState(false);
+  const encuadreHecho = useRef(false);
 
-  const { data: gps } = useGpsPositions();
-  const { data: barcos = [] } = useBarcos();
-
-  // Cargar estilo vectorial (con fallback raster)
   useEffect(() => {
     let vivo = true;
     estiloNautico()
@@ -97,19 +87,19 @@ export default function MapaNautico({ centro, zoom, marcadores = [], ruta }: Pro
     };
   }, []);
 
-  // Crear el mapa una vez cargado el estilo
   useEffect(() => {
     if (!contenedor.current || !estilo) return;
     const map = new MapLibreMap({
       container: contenedor.current,
       style: estilo,
-      center: centro,
+      center: [centro[1], centro[0]], // MapLibre usa [lng, lat]
       zoom,
       attributionControl: { compact: true },
     });
     map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
     mapaRef.current = map;
     setMapListo(true);
+    encuadreHecho.current = false;
     return () => {
       setMapListo(false);
       map.remove();
@@ -118,46 +108,31 @@ export default function MapaNautico({ centro, zoom, marcadores = [], ruta }: Pro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estilo]);
 
-  // Re-centrar cuando cambian las props
+  // Enfoque a un barco concreto (clic en la flota)
   useEffect(() => {
-    mapaRef.current?.jumpTo({ center: centro, zoom });
-  }, [centro, zoom]);
+    if (!mapaRef.current || !enfoque) return;
+    mapaRef.current.jumpTo({ center: [enfoque.lng, enfoque.lat], zoom: 13 });
+  }, [enfoque]);
 
-  // Marcadores + ruta (se reconstruyen en cada cambio de datos)
+  // Marcadores + ruta + encuadre inicial
   useEffect(() => {
     const map = mapaRef.current;
     if (!map || !mapListo) return;
     const limpiar: (() => void)[] = [];
 
     marcadores.forEach((m) => {
+      const esGps = m.tipo === 'gps';
       const el = document.createElement('div');
-      el.className = 'fleet-dot';
-      el.innerHTML = `<span class="dot" style="background:${m.color}"></span>`;
+      if (esGps) {
+        el.className = `gps-marker${(m.speed ?? 0) >= 1 ? ' moviendo' : ''}`;
+        el.style.background = m.color;
+        el.innerHTML = svgAnclaBlanco;
+      } else {
+        el.className = 'fleet-dot';
+        el.innerHTML = `<span class="dot" style="background:${m.color}"></span>`;
+      }
       const mk = new Marker({ element: el, anchor: 'center' }).setLngLat([m.lng, m.lat]).addTo(map);
       mk.setPopup(new Popup({ offset: 14, closeButton: false }).setHTML(m.html));
-      limpiar.push(() => mk.remove());
-    });
-
-    const items = gps?.items ?? [];
-    items.forEach((b) => {
-      if (b.lat == null || b.lng == null) return;
-      const el = document.createElement('div');
-      el.className = `gps-marker${(b.speed ?? 0) >= 1 ? ' moviendo' : ''}`;
-      el.style.background = estadoColor(b);
-      el.innerHTML = svgAnclaBlanco;
-      const mk = new Marker({ element: el, anchor: 'center' }).setLngLat([b.lng, b.lat]).addTo(map);
-      const barco = barcos.find((x) => normalizarNombre(x.nombre) === normalizarNombre(b.name));
-      mk.setPopup(
-        new Popup({ offset: 16, closeButton: false }).setHTML(
-          `<div class="popup"><b>${b.name}</b>` +
-            `<div>Estado GPS: <b style="color:${estadoColor(b)}">${estadoTexto(b)}</b></div>` +
-            `<div>Velocidad: <b style="color:${estadoColor(b)}">${b.speed != null ? `${b.speed} nudos` : '—'}</b>${b.course != null ? ` · rumbo ${b.course}°` : ''}</div>` +
-            `<div class="muted">Pos: ${b.lat.toFixed(5)}, ${b.lng.toFixed(5)}</div>` +
-            `<div class="muted">${b.time ? hace(b.time) : 'sin hora'} · GPS GomezGPS</div>` +
-            (barco ? `<a href="#/barco/${barco.id}">Ver bitácora del día →</a>` : '') +
-            `</div>`,
-        ),
-      );
       limpiar.push(() => mk.remove());
     });
 
@@ -183,8 +158,35 @@ export default function MapaNautico({ centro, zoom, marcadores = [], ruta }: Pro
       });
     }
 
+    // Encuadre inicial: muestra TODOS los marcadores (GPS + reportes).
+    // Si aún no hay marcadores, espera (no marca "hecho") hasta que lleguen.
+    if (!encuadreHecho.current && (marcadores.length > 0 || (ruta && ruta.length > 1))) {
+      const puntos = [
+        ...marcadores.map((m) => [m.lng, m.lat] as [number, number]),
+        ...(ruta ?? []).map(([lat, lng]) => [lng, lat] as [number, number]),
+      ];
+      const lngs = puntos.map((p) => p[0]);
+      const lats = puntos.map((p) => p[1]);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      if (minLng === maxLng && minLat === maxLat) {
+        map.jumpTo({ center: [minLng, minLat], zoom: 12 });
+      } else {
+        map.fitBounds(
+          [
+            [minLng, minLat],
+            [maxLng, maxLat],
+          ],
+          { padding: 90, maxZoom: 12 },
+        );
+      }
+      encuadreHecho.current = true;
+    }
+
     return () => limpiar.forEach((f) => f());
-  }, [mapListo, marcadores, gps, barcos, ruta]);
+  }, [mapListo, marcadores, ruta, centro, zoom]);
 
   return (
     <>
@@ -207,16 +209,4 @@ export function GpsStatusChip() {
         ? `GPS en vivo · ${n} barcos · ${hace(data.fetched_at)}`
         : 'GPS en vivo';
   return <span className={`gps-chip${error ? ' err' : ''}`}>{texto}</span>;
-}
-
-function estadoColor(b: GpsBoat): string {
-  if (b.online === 'online') return '#22c55e';
-  if (b.online === 'offline') return '#ef4444';
-  return '#f59e0b';
-}
-
-function estadoTexto(b: GpsBoat): string {
-  if (b.online === 'online') return 'En movimiento';
-  if (b.online === 'offline') return 'Sin señal';
-  return 'Conectado';
 }
