@@ -1135,6 +1135,11 @@ input[type='radio'] {
 }
 
 /* ---------- Popups Leaflet ---------- */
+.leaflet-container .leaflet-control-attribution {
+  font-size: 9px;
+  opacity: 0.75;
+  background: color-mix(in srgb, var(--papel-alto) 88%, transparent);
+}
 .leaflet-container .leaflet-popup-content-wrapper {
   background: var(--papel-alto);
   color: var(--tinta);

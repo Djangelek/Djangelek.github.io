@@ -221,7 +221,13 @@ export default function Dashboard() {
         </div>
 
         <div className="mapa-wrap">
-          <MapContainer center={[10.4, -75.53]} zoom={11} className="mapa">
+          <MapContainer
+            center={[10.4, -75.53]}
+            zoom={11}
+            className="mapa"
+            zoomControl={false}
+            attributionControl={true}
+          >
             <TileLayer
               url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution="&copy; OpenStreetMap contributors"

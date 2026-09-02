@@ -112,14 +112,23 @@ export default function BoatDetail() {
       </div>
 
       <div className="mapa-wrap" style={{ height: 460 }}>
-        <MapContainer center={puntos[0] ?? [10.4, -75.53]} zoom={12} className="mapa">
+        <MapContainer
+          center={puntos[0] ?? [10.4, -75.53]}
+          zoom={12}
+          className="mapa"
+          zoomControl={false}
+          attributionControl={true}
+        >
           <TileLayer
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution="&copy; OpenStreetMap contributors"
             maxZoom={19}
           />
           {puntos.length > 1 && (
-            <Polyline positions={puntos} pathOptions={{ color: '#2e6f9e', weight: 4, opacity: 0.85 }} />
+            <Polyline
+              positions={puntos}
+              pathOptions={{ color: '#185a9c', weight: 4, opacity: 0.9, dashArray: '6 8' }}
+            />
           )}
           {reportes
             .filter((r) => r.lat != null && r.lng != null)
