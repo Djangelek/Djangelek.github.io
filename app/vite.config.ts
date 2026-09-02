@@ -55,7 +55,6 @@ export default defineConfig({
         // Separar vendors para mejor caché y carga
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
-          leaflet: ['leaflet', 'react-leaflet'],
           excel: ['exceljs'],
         },
       },

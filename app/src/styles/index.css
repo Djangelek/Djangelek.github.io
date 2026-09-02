@@ -1011,6 +1011,7 @@ input[type='radio'] {
 }
 
 .mapa-wrap {
+  position: relative;
   height: 400px;
   border-radius: var(--radio);
   overflow: hidden;
@@ -1140,6 +1141,56 @@ input[type='radio'] {
   opacity: 0.75;
   background: color-mix(in srgb, var(--papel-alto) 88%, transparent);
 }
+
+/* ---------- MapLibre (mapa náutico) ---------- */
+.map-libre {
+  height: 100%;
+  width: 100%;
+}
+.mapa-esqueleto {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radio);
+}
+.maplibregl-popup-content {
+  background: var(--papel-alto);
+  color: var(--tinta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-mini);
+  box-shadow: var(--sombra-alta);
+  font-family: var(--sans);
+  padding: 12px 14px;
+}
+.maplibregl-popup-tip {
+  border-top-color: var(--papel-alto) !important;
+  border-bottom-color: var(--papel-alto) !important;
+}
+.maplibregl-ctrl-attrib {
+  font-size: 9px;
+  opacity: 0.75;
+  background: color-mix(in srgb, var(--papel-alto) 88%, transparent) !important;
+  color: var(--tinta-tenue) !important;
+}
+.maplibregl-ctrl-group {
+  background: var(--papel-alto);
+  border-radius: var(--radio-mini);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+.maplibregl-ctrl-group button {
+  background: var(--papel-alto);
+  color: var(--tinta);
+}
+.maplibregl-ctrl-group button:hover {
+  background: var(--papel-hondo);
+}
+.maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: invert(0);
+}
+[data-theme='tinta'] .maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+
 .leaflet-container .leaflet-popup-content-wrapper {
   background: var(--papel-alto);
   color: var(--tinta);

@@ -1,25 +1,14 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
-import L from 'leaflet';
 import { useAuth } from '../../hooks/useAuth';
 import { useBarcos, useBitacorasDeHoy, useEstados, useFleet } from '../../hooks/useFleet';
 import { useReportNotifications } from '../../hooks/useReportNotifications';
-import GpsMarkers, { GpsStatusChip } from '../map/GpsMarkers';
+import MapaNautico, { GpsStatusChip } from '../map/MapaNautico';
 import { ds } from '../../services';
 import { useUIStore } from '../../store/uiStore';
 import { formatFechaDia, formatHora, hace, hoyLocalISO } from '../../utils/format';
 import { Icono } from '../ui/Iconos';
 import type { FleetEntry } from '../../types';
-
-function iconPara(color: string) {
-  return L.divIcon({
-    className: 'fleet-dot',
-    html: `<span class="dot" style="background:${color}"></span>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  });
-}
 
 /**
  * EL MOSTRADOR — supervisión de operación y ventas en escritorio amplio:
@@ -221,50 +210,24 @@ export default function Dashboard() {
         </div>
 
         <div className="mapa-wrap">
-          <MapContainer center={[10.4, -75.53]} zoom={11} className="mapa">
-            <TileLayer
-              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
-              maxZoom={19}
-            />
-            <TileLayer
-              url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
-              attribution="&copy; OpenSeaMap contributors"
-              maxNativeZoom={16}
-              maxZoom={19}
-            />
-            {visibles
+          <MapaNautico
+            centro={[10.4, -75.53]}
+            zoom={11}
+            marcadores={visibles
               .filter((e) => e.report.lat != null && e.report.lng != null)
-              .map((e) => (
-                <Marker
-                  key={e.report.id}
-                  position={[e.report.lat as number, e.report.lng as number]}
-                  icon={iconPara(e.estado?.color ?? '#38bdf8')}
-                >
-                  <Popup>
-                    <div className="popup">
-                      <b>{e.barco.nombre}</b>
-                      <div>
-                        Estado:{' '}
-                        <b style={{ color: e.estado?.color, display: 'inline' }}>
-                          {e.estado?.nombre ?? '—'}
-                        </b>
-                      </div>
-                      <div>Lugar: {e.report.lugar || '—'}</div>
-                      <div>
-                        PAX: {e.report.pasajeros} · Maletas: {e.report.maletas} · Bolsos:{' '}
-                        {e.report.bolsos}
-                      </div>
-                      <div className="muted">
-                        {formatHora(e.report.created_at)} · {hace(e.report.created_at)}
-                      </div>
-                      <Link to={`/barco/${e.barco.id}`}>Ver bitácora del día →</Link>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            <GpsMarkers />
-          </MapContainer>
+              .map((e) => ({
+                lat: e.report.lat as number,
+                lng: e.report.lng as number,
+                color: e.estado?.color ?? '#38bdf8',
+                html:
+                  `<div class="popup"><b>${e.barco.nombre}</b>` +
+                  `<div>Estado: <b style="color:${e.estado?.color};display:inline">${e.estado?.nombre ?? '—'}</b></div>` +
+                  `<div>Lugar: ${e.report.lugar || '—'}</div>` +
+                  `<div>PAX: ${e.report.pasajeros} · Maletas: ${e.report.maletas} · Bolsos: ${e.report.bolsos}</div>` +
+                  `<div class="muted">${formatHora(e.report.created_at)} · ${hace(e.report.created_at)}</div>` +
+                  `<a href="#/barco/${e.barco.id}">Ver bitácora del día →</a></div>`,
+              }))}
+          />
         </div>
 
         <div className="columna-dia">

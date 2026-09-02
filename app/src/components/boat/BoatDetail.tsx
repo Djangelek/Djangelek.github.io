@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { MapContainer, Marker, Popup, Polyline, TileLayer } from 'react-leaflet';
-import L from 'leaflet';
+import MapaNautico from '../map/MapaNautico';
 import { useBarcos, useBitacoraDeHoy, useEstados, usePerfiles, useRutas } from '../../hooks/useFleet';
 import { useReportesDeBarco } from '../../hooks/useHistory';
 import { distanciaRuta, formatKm } from '../../utils/distance';
@@ -42,13 +41,6 @@ export default function BoatDetail() {
   const nombreDe = (pid: string) => perfiles.find((p) => p.id === pid)?.nombre ?? '—';
 
   if (!barco) return <div className="center pad">Barco no encontrado.</div>;
-
-  const icono = L.divIcon({
-    className: 'fleet-dot',
-    html: '<span class="dot" style="background:#2e6f9e"></span>',
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  });
 
   const ultimo = reportes[reportes.length - 1];
   const ultimoEstado = ultimo ? estados.find((e) => e.id === ultimo.estado_id) : undefined;
@@ -112,40 +104,22 @@ export default function BoatDetail() {
       </div>
 
       <div className="mapa-wrap" style={{ height: 460 }}>
-        <MapContainer center={puntos[0] ?? [10.4, -75.53]} zoom={12} className="mapa">
-          <TileLayer
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-            maxZoom={19}
-          />
-          <TileLayer
-            url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
-            attribution="&copy; OpenSeaMap contributors"
-            maxNativeZoom={16}
-            maxZoom={19}
-          />
-          {puntos.length > 1 && (
-            <Polyline
-              positions={puntos}
-              pathOptions={{ color: '#185a9c', weight: 4, opacity: 0.9, dashArray: '6 8' }}
-            />
-          )}
-          {reportes
+        <MapaNautico
+          centro={puntos[0] ?? [10.4, -75.53]}
+          zoom={12}
+          ruta={puntos}
+          marcadores={reportes
             .filter((r) => r.lat != null && r.lng != null)
-            .map((r) => (
-              <Marker key={r.id} position={[r.lat as number, r.lng as number]} icon={icono}>
-                <Popup>
-                  <div className="popup">
-                    <b>{formatHora(r.created_at)}</b>
-                    <div>{estados.find((e) => e.id === r.estado_id)?.nombre ?? '—'}</div>
-                    <div>
-                      {r.lugar || '—'} · {r.pasajeros} PAX
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-        </MapContainer>
+            .map((r) => ({
+              lat: r.lat as number,
+              lng: r.lng as number,
+              color: '#185a9c',
+              html:
+                `<div class="popup"><b>${formatHora(r.created_at)}</b>` +
+                `<div>${estados.find((e) => e.id === r.estado_id)?.nombre ?? '—'}</div>` +
+                `<div>${r.lugar || '—'} · ${r.pasajeros} PAX</div></div>`,
+            }))}
+        />
       </div>
 
       <div className="hoja">
