@@ -25,7 +25,7 @@ export default function Header() {
   if (!session) return null;
 
   const rol = session.profile.rol;
-  // Tripulación: bitácora (capitán), reporte y mantenimiento (capitán).
+  // Tripulación: bitácora (solo capitán), reporte y mantenimiento.
   // Operación: todo. Ventas: solo lectura.
   const esTripulacion = rol === 'capitan' || rol === 'marinero';
   const esOperacion = rol === 'operacion';
@@ -48,12 +48,10 @@ export default function Header() {
         <Icono nombre="reportar" size={18} />
         Reportar
       </NavLink>
-      {rol === 'capitan' && (
-        <NavLink to="/mantenimiento" className={claseTab}>
-          <Icono nombre="mantenimiento" size={18} />
-          Mantenimiento
-        </NavLink>
-      )}
+      <NavLink to="/mantenimiento" className={claseTab}>
+        <Icono nombre="mantenimiento" size={18} />
+        Mantenimiento
+      </NavLink>
     </>
   ) : (
     <>

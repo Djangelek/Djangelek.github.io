@@ -57,7 +57,7 @@ function Shell() {
           <Route
             path="/mantenimiento"
             element={
-              <ProtectedRoute rol="capitan">
+              <ProtectedRoute rol={['capitan', 'marinero']}>
                 <MantenimientoForm />
               </ProtectedRoute>
             }

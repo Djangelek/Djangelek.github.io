@@ -50,8 +50,8 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const MAINTAINX_BASE = 'https://api.getmaintainx.com/v1';
 
-/** Roles que pueden crear órdenes de mantenimiento (capitán + operación/admin). */
-const ROLES_PERMITIDOS = ['capitan', 'operacion'];
+/** Roles que pueden crear órdenes de mantenimiento (tripulación + operación/admin). */
+const ROLES_PERMITIDOS = ['capitan', 'marinero', 'operacion'];
 
 /** Asignatario por defecto: usuario de mantenimiento (Angel, REST API auth). */
 const ASSIGNEE_USER_ID_DEFAULT = 1440988;
