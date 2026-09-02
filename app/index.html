@@ -18,6 +18,18 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛵</text></svg>"
     />
+    <script>
+      // Al activarse una versión nueva de la PWA (skipWaiting + clientsClaim),
+      // recarga la página automáticamente para no quedarse en una versión vieja.
+      if ('serviceWorker' in navigator) {
+        let recargado = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (recargado) return;
+          recargado = true;
+          window.location.reload();
+        });
+      }
+    </script>
   </head>
   <body>
     <!-- DIRECTION-CONTRACT
