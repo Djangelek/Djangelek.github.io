@@ -285,10 +285,15 @@ export class SupabaseSource implements DataSource {
     this.raise(error);
   }
 
-  async addEstado(nombre: string, color: string, esRecogida = false): Promise<Estado> {
+  async addEstado(
+    nombre: string,
+    color: string,
+    esRecogida = false,
+    esDesembarque = false,
+  ): Promise<Estado> {
     const { data, error } = await this.client
       .from('estados')
-      .insert([{ nombre, color, es_recogida: esRecogida }])
+      .insert([{ nombre, color, es_recogida: esRecogida, es_desembarque: esDesembarque }])
       .select()
       .single();
     this.raise(error);
@@ -297,7 +302,7 @@ export class SupabaseSource implements DataSource {
 
   async updateEstado(
     id: string,
-    cambios: Partial<Pick<Estado, 'nombre' | 'color' | 'es_recogida'>>,
+    cambios: Partial<Pick<Estado, 'nombre' | 'color' | 'es_recogida' | 'es_desembarque'>>,
   ): Promise<Estado> {
     const { data, error } = await this.client
       .from('estados')

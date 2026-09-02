@@ -20,6 +20,8 @@ export interface Estado {
   color: string;
   /** true → el reporte pide pasajeros/maletas/bolsos (embarque) */
   es_recogida: boolean;
+  /** true → estado de desembarque: reinicia pasajeros y equipaje a 0 */
+  es_desembarque: boolean;
 }
 
 export interface Ruta {
@@ -46,6 +48,9 @@ export interface Bitacora {
   ruta_id: string | null;
   pasajeros: number;
   combustible: number | null; // 0–100
+  /** Coordenadas donde se selló la bitácora (GPS del capitán). */
+  lat: number | null;
+  lng: number | null;
   /** Ids de perfil de los marineros a bordo ese día. */
   marineros: string[];
   created_at: string;
@@ -58,6 +63,8 @@ export interface NewBitacora {
   ruta_id: string | null;
   pasajeros: number;
   combustible: number | null;
+  lat?: number | null;
+  lng?: number | null;
   marineros?: string[];
 }
 

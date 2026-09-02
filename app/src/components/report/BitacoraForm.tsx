@@ -12,6 +12,7 @@ import {
   useTripulacionDeBarco,
 } from '../../hooks/useFleet';
 import { ds } from '../../services';
+import { useGeolocation } from '../../hooks/useGeolocation';
 import { useUIStore } from '../../store/uiStore';
 import { formatFechaDia, hoyLocalISO } from '../../utils/format';
 import { Icono } from '../ui/Iconos';
@@ -32,6 +33,8 @@ export default function BitacoraForm() {
   const { data: barcos = [] } = useBarcos();
   const { data: rutas = [] } = useRutas();
   const { data: perfiles = [] } = usePerfiles();
+  // GPS en segundo plano:se obtiene solo mientras se llena la bitácora.
+  const { geo } = useGeolocation();
 
   // Al iniciar el día el capitán puede elegir CUALQUIER barco activo
   // (la BD lo permite: bitacoras_insert para cualquier capitán).
@@ -90,6 +93,8 @@ export default function BitacoraForm() {
         ruta_id: rutaId || null,
         pasajeros: parseInt(pasajeros || '0', 10) || 0,
         combustible,
+        lat: geo.status === 'ok' ? geo.lat : null,
+        lng: geo.status === 'ok' ? geo.lng : null,
         marineros: marinerosSel,
       });
       await queryClient.invalidateQueries({ queryKey: ['bitacora', 'hoy'] });
@@ -287,6 +292,17 @@ export default function BitacoraForm() {
                 />
                 <span className="rango-valor">{combustible}%</span>
               </div>
+            </div>
+
+            <div className={`gps gps-${geo.status}`} style={{ marginTop: 12 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Icono nombre="ubicacion" size={14} />
+                {geo.status === 'idle' && 'GPS: a la espera…'}
+                {geo.status === 'loading' && 'GPS: ubicando la posición…'}
+                {geo.status === 'ok' && `GPS: ${geo.lat.toFixed(5)}, ${geo.lng.toFixed(5)}`}
+                {geo.status === 'error' && `GPS: ${geo.message}`}
+              </span>
+              <span className="muted">· se guarda en la bitácora al sellar</span>
             </div>
 
             <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>

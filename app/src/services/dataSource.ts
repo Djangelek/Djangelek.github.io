@@ -54,8 +54,8 @@ export interface DataSource {
   addBarco(nombre: string, capacidadPax: number): Promise<Boat>;
   updateBarco(id: string, cambios: Partial<Pick<Boat, 'nombre' | 'capacidad_pax' | 'activo'>>): Promise<Boat>;
   removeBarco(id: string): Promise<void>;
-  addEstado(nombre: string, color: string, esRecogida?: boolean): Promise<Estado>;
-  updateEstado(id: string, cambios: Partial<Pick<Estado, 'nombre' | 'color' | 'es_recogida'>>): Promise<Estado>;
+  addEstado(nombre: string, color: string, esRecogida?: boolean, esDesembarque?: boolean): Promise<Estado>;
+  updateEstado(id: string, cambios: Partial<Pick<Estado, 'nombre' | 'color' | 'es_recogida' | 'es_desembarque'>>): Promise<Estado>;
   removeEstado(id: string): Promise<void>;
   addRuta(nombre: string): Promise<Ruta>;
   removeRuta(id: string): Promise<void>;

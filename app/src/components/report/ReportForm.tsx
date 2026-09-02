@@ -56,6 +56,7 @@ export default function ReportForm() {
 
   const estadoSel = estados.find((e) => e.id === estadoId);
   const pideCarga = estadoSel?.es_recogida ?? false;
+  const esDesembarque = estadoSel?.es_desembarque ?? false;
 
   // Último reporte del barco (para pre-rellenar la recogida)
   const { data: ultimos = [] } = useQuery({
@@ -76,6 +77,15 @@ export default function ReportForm() {
     setBolsos(String(ultimoReporte.bolsos));
     setPrellenado(true);
   }, [pideCarga, ultimoReporte, prellenado]);
+
+  // "Desembarque de pasajeros": reinicia a 0 pasajeros y equipaje.
+  useEffect(() => {
+    if (!esDesembarque) return;
+    setPasajeros('0');
+    setMaletas('0');
+    setBolsos('0');
+    setPrellenado(false);
+  }, [esDesembarque]);
 
   // Bitácora del día del barco (línea de tiempo bajo el formulario)
   const desdeHoy = inicioDelDia(new Date());
@@ -119,9 +129,9 @@ export default function ReportForm() {
         barco_id: barcoId,
         bitacora_id: bitacora?.id ?? null,
         estado_id: estadoId,
-        pasajeros: pideCarga ? parseInt(pasajeros || '0', 10) || 0 : 0,
-        maletas: pideCarga ? parseInt(maletas || '0', 10) || 0 : 0,
-        bolsos: pideCarga ? parseInt(bolsos || '0', 10) || 0 : 0,
+        pasajeros: esDesembarque ? 0 : pideCarga ? parseInt(pasajeros || '0', 10) || 0 : 0,
+        maletas: esDesembarque ? 0 : pideCarga ? parseInt(maletas || '0', 10) || 0 : 0,
+        bolsos: esDesembarque ? 0 : pideCarga ? parseInt(bolsos || '0', 10) || 0 : 0,
         lugar: lugar.trim(),
         lat,
         lng,
@@ -270,11 +280,13 @@ export default function ReportForm() {
           </div>
         </div>
 
-        {pideCarga && (
+        {(pideCarga || esDesembarque) && (
           <div className="perforado">
             <div className="fila-dato">
-              <span className="rotulo">Carga de este embarque</span>
-              {prellenado && ultimoReporte && (
+              <span className="rotulo">
+                {esDesembarque ? 'Desembarque — se reinicia a 0' : 'Carga de este embarque'}
+              </span>
+              {!esDesembarque && prellenado && ultimoReporte && (
                 <span className="dato-anterior">tomada de tu último reporte — ajústala si cambió</span>
               )}
             </div>
@@ -288,6 +300,7 @@ export default function ReportForm() {
                   min={0}
                   value={pasajeros}
                   onChange={(e) => setPasajeros(e.target.value)}
+                  readOnly={esDesembarque}
                   placeholder="0"
                 />
               </div>
@@ -300,6 +313,7 @@ export default function ReportForm() {
                   min={0}
                   value={maletas}
                   onChange={(e) => setMaletas(e.target.value)}
+                  readOnly={esDesembarque}
                   placeholder="0"
                 />
               </div>
@@ -312,6 +326,7 @@ export default function ReportForm() {
                   min={0}
                   value={bolsos}
                   onChange={(e) => setBolsos(e.target.value)}
+                  readOnly={esDesembarque}
                   placeholder="0"
                 />
               </div>

@@ -213,20 +213,39 @@ export default function Dashboard() {
           <MapaNautico
             centro={[10.4, -75.53]}
             zoom={11}
-            marcadores={visibles
-              .filter((e) => e.report.lat != null && e.report.lng != null)
-              .map((e) => ({
-                lat: e.report.lat as number,
-                lng: e.report.lng as number,
-                color: e.estado?.color ?? '#38bdf8',
-                html:
-                  `<div class="popup"><b>${e.barco.nombre}</b>` +
-                  `<div>Estado: <b style="color:${e.estado?.color};display:inline">${e.estado?.nombre ?? '—'}</b></div>` +
-                  `<div>Lugar: ${e.report.lugar || '—'}</div>` +
-                  `<div>PAX: ${e.report.pasajeros} · Maletas: ${e.report.maletas} · Bolsos: ${e.report.bolsos}</div>` +
-                  `<div class="muted">${formatHora(e.report.created_at)} · ${hace(e.report.created_at)}</div>` +
-                  `<a href="#/barco/${e.barco.id}">Ver bitácora del día →</a></div>`,
-              }))}
+            marcadores={[
+              ...visibles
+                .filter((e) => e.report.lat != null && e.report.lng != null)
+                .map((e) => ({
+                  lat: e.report.lat as number,
+                  lng: e.report.lng as number,
+                  color: e.estado?.color ?? '#38bdf8',
+                  html:
+                    `<div class="popup"><b>${e.barco.nombre}</b>` +
+                    `<div>Estado: <b style="color:${e.estado?.color};display:inline">${e.estado?.nombre ?? '—'}</b></div>` +
+                    `<div>Lugar: ${e.report.lugar || '—'}</div>` +
+                    `<div>PAX: ${e.report.pasajeros} · Maletas: ${e.report.maletas} · Bolsos: ${e.report.bolsos}</div>` +
+                    `<div class="muted">${formatHora(e.report.created_at)} · ${hace(e.report.created_at)}</div>` +
+                    `<a href="#/barco/${e.barco.id}">Ver bitácora del día →</a></div>`,
+                })),
+              // Bitácora: dónde se abrió el día (última posición disponible si no hay reporte)
+              ...bitacorasHoy
+                .filter((b) => b.lat != null && b.lng != null)
+                .map((b) => {
+                  const barco = barcos.find((x) => x.id === b.barco_id);
+                  return {
+                    lat: b.lat as number,
+                    lng: b.lng as number,
+                    color: '#185a9c',
+                    html:
+                      `<div class="popup"><b>${barco?.nombre ?? 'Barco'} · Bitácora</b>` +
+                      `<div>Día abierto en: ${b.lat!.toFixed(5)}, ${b.lng!.toFixed(5)}</div>` +
+                      `<div>PAX: ${b.pasajeros} · Combustible: ${b.combustible ?? '—'}%</div>` +
+                      `<div class="muted">${formatHora(b.created_at)} · ${hace(b.created_at)}</div>` +
+                      `<a href="#/barco/${b.barco_id}">Ver detalle →</a></div>`,
+                  };
+                }),
+            ]}
           />
         </div>
 

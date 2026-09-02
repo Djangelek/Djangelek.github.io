@@ -85,15 +85,17 @@ create table if not exists public.estados (
   id          uuid primary key default gen_random_uuid(),
   nombre      text unique not null,
   color       text not null default '#38bdf8',
-  es_recogida boolean not null default false
+  es_recogida boolean not null default false,
+  es_desembarque boolean not null default false
 );
 
-insert into public.estados (nombre, color, es_recogida) values
-  ('Recogida de pasajeros', '#e0a03c', true),
-  ('En navegación',         '#22c55e', false),
-  ('Fondeado',              '#38bdf8', false),
-  ('En puerto',             '#f59e0b', false),
-  ('Emergencia',            '#ef4444', false)
+insert into public.estados (nombre, color, es_recogida, es_desembarque) values
+  ('Recogida de pasajeros',      '#e0a03c', true,  false),
+  ('En navegación',              '#22c55e', false, false),
+  ('Fondeado',                   '#38bdf8', false, false),
+  ('En puerto',                  '#f59e0b', false, false),
+  ('Emergencia',                 '#ef4444', false, false),
+  ('Desembarque de pasajeros',   '#6366f1', false, true)
 on conflict (nombre) do nothing;
 
 -- 4) RUTAS (administradas por operación) ------------------------
@@ -125,6 +127,8 @@ create table if not exists public.bitacoras (
   ruta_id     uuid references public.rutas(id) on delete set null,
   pasajeros   int  not null default 0 check (pasajeros >= 0),
   combustible int  check (combustible >= 0 and combustible <= 100),
+  lat         double precision,
+  lng         double precision,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );

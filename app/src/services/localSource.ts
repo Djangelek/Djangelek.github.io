@@ -62,11 +62,12 @@ function seed(): DB {
   ];
 
   const estados: Estado[] = [
-    { id: 'e0', nombre: 'Recogida de pasajeros', color: '#e0a03c', es_recogida: true },
-    { id: 'e1', nombre: 'En navegación', color: '#22c55e', es_recogida: false },
-    { id: 'e2', nombre: 'Fondeado', color: '#38bdf8', es_recogida: false },
-    { id: 'e3', nombre: 'En puerto', color: '#f59e0b', es_recogida: false },
-    { id: 'e4', nombre: 'Emergencia', color: '#ef4444', es_recogida: false },
+    { id: 'e0', nombre: 'Recogida de pasajeros', color: '#e0a03c', es_recogida: true, es_desembarque: false },
+    { id: 'e1', nombre: 'En navegación', color: '#22c55e', es_recogida: false, es_desembarque: false },
+    { id: 'e2', nombre: 'Fondeado', color: '#38bdf8', es_recogida: false, es_desembarque: false },
+    { id: 'e3', nombre: 'En puerto', color: '#f59e0b', es_recogida: false, es_desembarque: false },
+    { id: 'e4', nombre: 'Emergencia', color: '#ef4444', es_recogida: false, es_desembarque: false },
+    { id: 'e5', nombre: 'Desembarque de pasajeros', color: '#6366f1', es_recogida: false, es_desembarque: true },
   ];
 
   const rutas: Ruta[] = [
@@ -95,6 +96,8 @@ function seed(): DB {
       ruta_id: 'rt1',
       pasajeros: 52,
       combustible: 80,
+      lat: 10.407,
+      lng: -75.545,
       marineros: ['p4'],
       created_at: haceHoras(8),
       updated_at: haceHoras(8),
@@ -107,6 +110,8 @@ function seed(): DB {
       ruta_id: 'rt3',
       pasajeros: 28,
       combustible: 65,
+      lat: 10.32,
+      lng: -75.58,
       marineros: ['p5'],
       created_at: haceHoras(7),
       updated_at: haceHoras(7),
@@ -263,9 +268,11 @@ export class LocalSource implements DataSource {
     const hoy = fechaHoy();
     const existente = await this.getBitacoraDeHoy(input.barco_id);
     if (existente) throw new Error('Este barco ya tiene bitácora hoy');
-    const { marineros = [], ...datos } = input;
+    const { marineros = [], lat = null, lng = null, ...datos } = input;
     const bitacora: Bitacora = {
       ...datos,
+      lat,
+      lng,
       id: `bit${Date.now()}`,
       fecha: hoy,
       marineros,
@@ -381,8 +388,8 @@ export class LocalSource implements DataSource {
     this.persist();
   }
 
-  async addEstado(nombre: string, color: string, esRecogida = false): Promise<Estado> {
-    const e: Estado = { id: `e${Date.now()}`, nombre, color, es_recogida: esRecogida };
+  async addEstado(nombre: string, color: string, esRecogida = false, esDesembarque = false): Promise<Estado> {
+    const e: Estado = { id: `e${Date.now()}`, nombre, color, es_recogida: esRecogida, es_desembarque: esDesembarque };
     this.db.estados.push(e);
     this.persist();
     return e;
@@ -390,7 +397,7 @@ export class LocalSource implements DataSource {
 
   async updateEstado(
     id: string,
-    cambios: Partial<Pick<Estado, 'nombre' | 'color' | 'es_recogida'>>,
+    cambios: Partial<Pick<Estado, 'nombre' | 'color' | 'es_recogida' | 'es_desembarque'>>,
   ): Promise<Estado> {
     const idx = this.db.estados.findIndex((e) => e.id === id);
     if (idx === -1) throw new Error('Estado no encontrado');
