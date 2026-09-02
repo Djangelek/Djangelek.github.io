@@ -112,17 +112,11 @@ export default function BoatDetail() {
       </div>
 
       <div className="mapa-wrap" style={{ height: 460 }}>
-        <MapContainer
-          center={puntos[0] ?? [10.4, -75.53]}
-          zoom={12}
-          className="mapa"
-          zoomControl={false}
-          attributionControl={true}
-        >
+        <MapContainer center={puntos[0] ?? [10.4, -75.53]} zoom={12} className="mapa">
           <TileLayer
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-            maxZoom={19}
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
+            attribution="&copy; Esri, GEBCO"
+            maxZoom={16}
           />
           {puntos.length > 1 && (
             <Polyline

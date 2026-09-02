@@ -221,17 +221,11 @@ export default function Dashboard() {
         </div>
 
         <div className="mapa-wrap">
-          <MapContainer
-            center={[10.4, -75.53]}
-            zoom={11}
-            className="mapa"
-            zoomControl={false}
-            attributionControl={true}
-          >
+          <MapContainer center={[10.4, -75.53]} zoom={11} className="mapa">
             <TileLayer
-              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
-              maxZoom={19}
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
+              attribution="&copy; Esri, GEBCO"
+              maxZoom={16}
             />
             {visibles
               .filter((e) => e.report.lat != null && e.report.lng != null)
