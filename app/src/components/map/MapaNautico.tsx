@@ -20,6 +20,7 @@ import { svgAnclaBlanco } from '../ui/Iconos';
  */
 
 export interface MarcadorMapa {
+  id?: string;
   lat: number;
   lng: number;
   color: string;
@@ -36,7 +37,7 @@ interface Props {
   zoom: number;
   marcadores?: MarcadorMapa[];
   ruta?: [number, number][]; // [lat, lng][]
-  enfoque?: { lat: number; lng: number } | null;
+  enfoque?: { lat: number; lng: number; id?: string } | null;
 }
 
 const ESTILO_URL = 'https://protomaps.github.io/basemaps/assets/tiles.json';
@@ -73,6 +74,7 @@ async function estiloNautico(): Promise<StyleSpecification> {
 export default function MapaNautico({ centro, zoom, marcadores = [], ruta, enfoque }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<MapLibreMap | null>(null);
+  const marcadoresRef = useRef(new Map<string, Marker>());
   const [estilo, setEstilo] = useState<StyleSpecification | null>(null);
   const [mapListo, setMapListo] = useState(false);
   const encuadreHecho = useRef(false);
@@ -108,10 +110,12 @@ export default function MapaNautico({ centro, zoom, marcadores = [], ruta, enfoq
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estilo]);
 
-  // Enfoque a un barco concreto (clic en la flota)
+  // Enfoque a un barco concreto (clic en la flota): centra y abre su popup.
   useEffect(() => {
-    if (!mapaRef.current || !enfoque) return;
-    mapaRef.current.jumpTo({ center: [enfoque.lng, enfoque.lat], zoom: 13 });
+    const map = mapaRef.current;
+    if (!map || !enfoque) return;
+    map.jumpTo({ center: [enfoque.lng, enfoque.lat], zoom: 13 });
+    if (enfoque.id) marcadoresRef.current.get(enfoque.id)?.togglePopup();
   }, [enfoque]);
 
   // Marcadores + ruta + encuadre inicial
@@ -133,7 +137,11 @@ export default function MapaNautico({ centro, zoom, marcadores = [], ruta, enfoq
       }
       const mk = new Marker({ element: el, anchor: 'center' }).setLngLat([m.lng, m.lat]).addTo(map);
       mk.setPopup(new Popup({ offset: 14, closeButton: false }).setHTML(m.html));
-      limpiar.push(() => mk.remove());
+      if (m.id) marcadoresRef.current.set(m.id, mk);
+      limpiar.push(() => {
+        mk.remove();
+        if (m.id) marcadoresRef.current.delete(m.id);
+      });
     });
 
     if (ruta && ruta.length > 1) {

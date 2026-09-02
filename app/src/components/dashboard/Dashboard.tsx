@@ -1,4 +1,4 @@
-import { useMemo, useState, type MouseEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useBarcos, useBitacorasDeHoy, useEstados, useFleet } from '../../hooks/useFleet';
@@ -39,7 +39,7 @@ export default function Dashboard() {
 
   const [filtroEstado, setFiltroEstado] = useState('');
   const [busqueda, setBusqueda] = useState('');
-  const [enfoque, setEnfoque] = useState<{ lat: number; lng: number } | null>(null);
+  const [enfoque, setEnfoque] = useState<{ lat: number; lng: number; id?: string } | null>(null);
 
   // GPS en vivo emparejado a los barcos por nombre (normalizado).
   const gpsPorBarco = useMemo(() => {
@@ -60,6 +60,7 @@ export default function Dashboard() {
       const entry = entries.find((e) => e.barco.id === barcoId);
       const color = gpsColor(item);
       out.push({
+        id: barcoId,
         lat: item.lat as number,
         lng: item.lng as number,
         color,
@@ -82,6 +83,7 @@ export default function Dashboard() {
       if (gpsPorBarco.has(e.barco.id)) continue;
       if (e.report.lat == null || e.report.lng == null) continue;
       out.push({
+        id: e.barco.id,
         lat: e.report.lat,
         lng: e.report.lng,
         color: e.estado?.color ?? '#38bdf8',
@@ -110,7 +112,7 @@ export default function Dashboard() {
 
   function centrarBarco(barcoId: string) {
     const p = posicionDe(barcoId);
-    if (p) setEnfoque(p);
+    if (p) setEnfoque({ ...p, id: barcoId });
   }
 
   const visibles = useMemo(
@@ -281,12 +283,7 @@ export default function Dashboard() {
               <div className="muted center pad">No hay barcos que coincidan.</div>
             )}
             {visibles.map((e) => (
-              <BoatRow
-                key={e.barco.id}
-                entry={e}
-                esOperacion={esOperacion}
-                onCentrar={centrarBarco}
-              />
+              <BoatRow key={e.barco.id} entry={e} onCentrar={centrarBarco} />
             ))}
           </div>
         </div>
@@ -348,26 +345,12 @@ export default function Dashboard() {
 
 function BoatRow({
   entry,
-  esOperacion,
   onCentrar,
 }: {
   entry: FleetEntry;
-  esOperacion: boolean;
   onCentrar: (barcoId: string) => void;
 }) {
   const { report, barco, estado, operador } = entry;
-  const pushToast = useUIStore((s) => s.pushToast);
-
-  function borrar(e: MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!window.confirm(`¿Eliminar TODOS los reportes de ${barco.nombre}? Esta acción no se puede deshacer.`)) {
-      return;
-    }
-    ds.deleteReportesDeBarco(barco.id)
-      .then(() => pushToast(`Reportes de ${barco.nombre} eliminados`, 'success'))
-      .catch(() => pushToast('Error al eliminar', 'error'));
-  }
 
   return (
     <div
@@ -380,16 +363,6 @@ function BoatRow({
         if (e.key === 'Enter' || e.key === ' ') onCentrar(barco.id);
       }}
     >
-      {esOperacion && (
-        <button
-          className="btn-delete"
-          title="Eliminar todos los reportes"
-          aria-label={`Eliminar todos los reportes de ${barco.nombre}`}
-          onClick={borrar}
-        >
-          <Icono nombre="papelera" size={18} />
-        </button>
-      )}
       <div className="boat-header">
         <span className="boat-title">{barco.nombre}</span>
         <span className="estado-tag" style={{ borderColor: estado?.color, color: estado?.color }}>
