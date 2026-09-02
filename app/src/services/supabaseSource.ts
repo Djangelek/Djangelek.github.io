@@ -144,6 +144,34 @@ export class SupabaseSource implements DataSource {
     return bitacora;
   }
 
+  async getBitacoraDeHoyDelTripulante(perfilId: string): Promise<Bitacora | null> {
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+    const { data: crew } = await this.client
+      .from('bitacora_tripulantes')
+      .select('bitacora_id')
+      .eq('perfil_id', perfilId);
+    const crewIds = (crew ?? []).map((c) => c.bitacora_id);
+    const { data: bitacoras, error } = await this.client
+      .from('bitacoras')
+      .select('*')
+      .eq('fecha', hoy)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    this.raise(error);
+    const found = (bitacoras ?? []).find(
+      (b) => b.capitan_id === perfilId || crewIds.includes(b.id),
+    );
+    if (!found) return null;
+    const bitacora = found as Bitacora;
+    const { data: trip, error: errTrip } = await this.client
+      .from('bitacora_tripulantes')
+      .select('perfil_id')
+      .eq('bitacora_id', bitacora.id);
+    this.raise(errTrip);
+    bitacora.marineros = (trip ?? []).map((t) => t.perfil_id);
+    return bitacora;
+  }
+
   async listBitacoras(rango?: RangoFechas): Promise<Bitacora[]> {
     let q = this.client.from('bitacoras').select('*').order('fecha', { ascending: false });
     if (rango) {

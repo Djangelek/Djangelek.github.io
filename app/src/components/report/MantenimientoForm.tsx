@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useBarcos, useMiBarco, useMiBitacoraHoy } from '../../hooks/useFleet';
+import { useBarcos, useMiBarco, useMiBitacoraTripulante } from '../../hooks/useFleet';
 import {
   enviarOrdenMantenimiento,
   mantenimientoDisponible,
@@ -28,7 +28,7 @@ export default function MantenimientoForm() {
   const rolLabel = esCapitan ? 'capitán' : session?.profile.rol ?? '';
 
   const miAsignacion = useMiBarco(session?.profile.id ?? null, session?.profile.rol ?? null);
-  const { data: miBitacoraHoy } = useMiBitacoraHoy(session?.profile.id ?? null);
+  const { data: miBitacora } = useMiBitacoraTripulante(session?.profile.id ?? null);
   const barcosElegibles = useMemo(() => barcos.filter((b) => b.activo), [barcos]);
 
   const [barcoId, setBarcoId] = useState('');
@@ -50,14 +50,14 @@ export default function MantenimientoForm() {
   useEffect(() => {
     if (barcoId) return;
     const enLista = (id?: string) => !!id && barcosElegibles.some((b) => b.id === id);
-    const hoy = miBitacoraHoy?.barco_id;
+    const hoy = miBitacora?.barco_id;
     const asignado = miAsignacion?.barco_id;
     const inicial =
       (enLista(hoy) && hoy) ||
       (enLista(asignado) && asignado) ||
       (barcosElegibles.length === 1 ? barcosElegibles[0].id : '');
     setBarcoId(inicial);
-  }, [barcoId, miAsignacion, miBitacoraHoy, barcosElegibles]);
+  }, [barcoId, miAsignacion, miBitacora, barcosElegibles]);
 
   // Limpieza de las vistas previas al desmontar (ref para ver las fotos actuales).
   const fotosRef = useRef(fotos);

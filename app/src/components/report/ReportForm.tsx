@@ -7,7 +7,7 @@ import {
   useBitacoraDeHoy,
   useEstados,
   useMiBarco,
-  useMiBitacoraHoy,
+  useMiBitacoraTripulante,
 } from '../../hooks/useFleet';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { ds } from '../../services';
@@ -36,11 +36,10 @@ export default function ReportForm() {
   const { geo, getGeo } = useGeolocation();
 
   const miAsignacion = useMiBarco(session?.profile.id ?? null, session?.profile.rol ?? null);
-  const { data: miBitacoraHoy } = useMiBitacoraHoy(session?.profile.id ?? null);
-  // El barco del día del capitán es el que él eligió en su Check Bitácora;
-  // si aún no abrió el día, cae a la asignación de operaciones.
-  const barcoId =
-    (esCapitan && miBitacoraHoy?.barco_id) || miAsignacion?.barco_id || null;
+  const { data: miBitacora } = useMiBitacoraTripulante(session?.profile.id ?? null);
+  // El barco del día es el que el capitán eligió en su Check Bitácora (y en el
+  // que el marinero está a bordo); si no, cae a la asignación de operaciones.
+  const barcoId = miBitacora?.barco_id || miAsignacion?.barco_id || null;
   const barco = barcos.find((b) => b.id === barcoId);
 
   const { data: bitacora, isLoading: cargandoGate } = useBitacoraDeHoy(barcoId);

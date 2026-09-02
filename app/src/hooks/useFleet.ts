@@ -62,6 +62,16 @@ export function useMiBitacoraHoy(perfilId: string | null) {
   });
 }
 
+/** Bitácora de HOY donde el usuario participa (capitán que la abrió o marinero a bordo). */
+export function useMiBitacoraTripulante(perfilId: string | null) {
+  return useQuery({
+    queryKey: ['bitacora', 'tripulante', 'hoy', perfilId],
+    queryFn: () => (perfilId ? ds.getBitacoraDeHoyDelTripulante(perfilId) : Promise.resolve(null)),
+    enabled: !!perfilId,
+    refetchInterval: 15_000,
+  });
+}
+
 /** Todas las bitácoras de hoy (panel de supervisión). */
 export function useBitacorasDeHoy() {
   const desde = new Date();

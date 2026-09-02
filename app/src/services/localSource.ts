@@ -252,6 +252,15 @@ export class LocalSource implements DataSource {
     return this.db.bitacoras.find((b) => b.capitan_id === capitanId && b.fecha === hoy) ?? null;
   }
 
+  async getBitacoraDeHoyDelTripulante(perfilId: string): Promise<Bitacora | null> {
+    const hoy = fechaHoy();
+    return (
+      this.db.bitacoras.find(
+        (b) => b.fecha === hoy && (b.capitan_id === perfilId || b.marineros.includes(perfilId)),
+      ) ?? null
+    );
+  }
+
   async listBitacoras(rango?: RangoFechas): Promise<Bitacora[]> {
     return this.db.bitacoras
       .filter((b) => {

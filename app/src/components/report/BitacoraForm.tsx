@@ -9,7 +9,6 @@ import {
   useMiBitacoraHoy,
   usePerfiles,
   useRutas,
-  useTripulacionDeBarco,
 } from '../../hooks/useFleet';
 import { ds } from '../../services';
 import { useGeolocation } from '../../hooks/useGeolocation';
@@ -42,7 +41,6 @@ export default function BitacoraForm() {
 
   // Barco: auto-seleccionado cuando hay uno solo; si no, se elige.
   const [barcoId, setBarcoId] = useState('');
-  const { crew } = useTripulacionDeBarco(barcoId || null);
 
   // El capitán elige su barco al abrir la bitácora (una vez por día).
   // Pre-seleccionamos el que ya abrió hoy; si no, el que le tiene asignado
@@ -71,9 +69,11 @@ export default function BitacoraForm() {
   const [combustible, setCombustible] = useState(100);
   const [marinerosSel, setMarinerosSel] = useState<string[]>([]);
 
+  // El capitán asigna a los marineros a bordo desde el formulario: se eligen
+  // de TODOS los marineros (rol marinero), no de una asignación previa.
   const marineros = useMemo(
-    () => crew.filter((c) => !c.asignacion.es_capitan && c.perfil),
-    [crew],
+    () => perfiles.filter((p) => p.rol === 'marinero'),
+    [perfiles],
   );
 
   const rutaDe = (b: Bitacora | null | undefined) =>
@@ -234,31 +234,30 @@ export default function BitacoraForm() {
             <div className="campo">
               <label>Marineros a bordo</label>
               {marineros.length === 0 && (
-                <p className="muted">
-                  {barcoId
-                    ? 'Operaciones aún no ha registrado tripulación para este barco.'
-                    : 'Selecciona el barco para cargar su tripulación.'}
-                </p>
+                <p className="muted">No hay marineros registrados en la tripulación.</p>
+              )}
+              {marineros.length > 0 && (
+                <p className="muted">Tú asignas quién va a bordo hoy (marca los que suben).</p>
               )}
               <div className="grid-2" style={{ gap: 8 }}>
-                {marineros.map(({ perfil }) => (
+                {marineros.map((p) => (
                   <label
-                    key={perfil!.id}
+                    key={p.id}
                     className="chip-estado"
                     style={{ minHeight: 48, cursor: 'pointer' }}
                   >
                     <input
                       type="checkbox"
-                      checked={marinerosSel.includes(perfil!.id)}
+                      checked={marinerosSel.includes(p.id)}
                       onChange={(e) =>
                         setMarinerosSel((prev) =>
                           e.target.checked
-                            ? [...prev, perfil!.id]
-                            : prev.filter((id) => id !== perfil!.id),
+                            ? [...prev, p.id]
+                            : prev.filter((id) => id !== p.id),
                         )
                       }
                     />
-                    {perfil!.nombre}
+                    {p.nombre}
                   </label>
                 ))}
               </div>
