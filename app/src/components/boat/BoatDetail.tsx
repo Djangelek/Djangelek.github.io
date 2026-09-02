@@ -116,12 +116,14 @@ export default function BoatDetail() {
           <TileLayer
             url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
             attribution="&copy; Esri, GEBCO"
-            maxZoom={16}
+            maxNativeZoom={16}
+            maxZoom={19}
           />
           <TileLayer
             url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
             attribution="&copy; OpenSeaMap contributors"
-            maxZoom={16}
+            maxNativeZoom={16}
+            maxZoom={19}
           />
           {puntos.length > 1 && (
             <Polyline
