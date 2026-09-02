@@ -223,8 +223,8 @@ export default function Dashboard() {
         <div className="mapa-wrap">
           <MapContainer center={[10.4, -75.53]} zoom={11} className="mapa">
             <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}"
-              attribution="&copy; Esri, National Geographic, HERE, Garmin, OpenStreetMap contributors"
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
+              attribution="&copy; Esri, GEBCO"
               maxZoom={16}
             />
             <TileLayer
