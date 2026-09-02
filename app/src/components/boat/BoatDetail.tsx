@@ -118,6 +118,11 @@ export default function BoatDetail() {
             attribution="&copy; Esri, GEBCO"
             maxZoom={16}
           />
+          <TileLayer
+            url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
+            attribution="&copy; OpenSeaMap contributors"
+            maxZoom={16}
+          />
           {puntos.length > 1 && (
             <Polyline
               positions={puntos}

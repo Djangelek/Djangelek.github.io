@@ -227,6 +227,11 @@ export default function Dashboard() {
               attribution="&copy; Esri, GEBCO"
               maxZoom={16}
             />
+            <TileLayer
+              url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
+              attribution="&copy; OpenSeaMap contributors"
+              maxZoom={16}
+            />
             {visibles
               .filter((e) => e.report.lat != null && e.report.lng != null)
               .map((e) => (
