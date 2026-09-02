@@ -114,7 +114,7 @@ export default function BoatDetail() {
       <div className="mapa-wrap" style={{ height: 460 }}>
         <MapContainer center={puntos[0] ?? [10.4, -75.53]} zoom={12} className="mapa">
           <TileLayer
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
             attribution="&copy; OpenStreetMap contributors"
             maxZoom={19}
           />
