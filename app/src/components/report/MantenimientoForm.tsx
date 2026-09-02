@@ -14,9 +14,9 @@ import { Icono } from '../ui/Iconos';
  * REPORTE DE MANTENIMIENTO (capitanes) — orden de trabajo a MaintainX.
  * Formulario limpio a bordo: título (qué pasó), fotos/evidencia, descripción
  * (contexto), dónde está el daño (opcional) y qué tan urgente (opcional).
- * La orden se crea en MaintainX (work request) y las fotos se adjuntan como
- * evidencia1.jpg, evidencia2.jpg… El contexto completo (barco, quién reporta,
- * hora) viaja en la descripción para quien revise en MaintainX.
+ * Se crea una WORK ORDER asignada al usuario de mantenimiento y las fotos se
+ * adjuntan como evidencia1.jpg, evidencia2.jpg… El contexto completo (barco,
+ * quién reporta, hora) viaja en la descripción para quien revise.
  */
 export default function MantenimientoForm() {
   const { session } = useAuth();
@@ -117,13 +117,13 @@ export default function MantenimientoForm() {
         fotos.map((f) => f.file),
         (subidas, total) => setFotosProgreso({ subidas, total }),
       );
-      setOrderId(res.workrequestId);
+      setOrderId(res.orderId);
       setFotosFallidas(res.fotosFallidas);
       setFase('hecho');
       pushToast(
         res.fotosFallidas > 0
-          ? `Orden #${res.workrequestId} enviada (${res.fotosSubidas} foto(s) subidas, ${res.fotosFallidas} pendientes)`
-          : `Orden #${res.workrequestId} enviada a mantenimiento`,
+          ? `Orden #${res.orderId} enviada (${res.fotosSubidas} foto(s) subidas, ${res.fotosFallidas} pendientes)`
+          : `Orden #${res.orderId} enviada a mantenimiento`,
         res.fotosFallidas > 0 ? 'info' : 'success',
       );
     } catch (e) {

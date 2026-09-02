@@ -5,7 +5,12 @@
 // El navegador NO puede llamar a MaintainX directamente (no hay CORS y el
 // token API no debe viajar en el bundle de la PWA): esta función guarda el
 // token como secret, verifica la sesión de Supabase del usuario y reenvía
-// la orden de trabajo (work request) + las fotos/evidencia.
+// la orden de trabajo + las fotos/evidencia.
+//
+// IMPORTANTE: se crean WORK ORDERS (órdenes de trabajo), NO work requests:
+// las work requests de MaintainX no admiten asignados (assignees) — el
+// campo "assignees" solo existe en las work orders, y así cada orden queda
+// asignada al usuario de mantenimiento (REST API auth user 1440988).
 //
 // Despliegue (desde app/):
 //   supabase login
@@ -14,26 +19,29 @@
 //   supabase functions deploy maintainx
 //
 // Llamadas desde la app (con sesión iniciada en Supabase):
-//   1) Crear la work request:
+//   1) Crear la work order:
 //      POST {SUPABASE_URL}/functions/v1/maintainx
 //      Authorization: Bearer <access_token del usuario>
 //      Content-Type: application/json
 //      { "title": "Fuga de agua en camarote proa",
 //        "description": "…contexto completo…",
-//        "assetId": 1234, "locationId": 567, "priority": "HIGH" }
-//      → 200 { ok: true, workrequest: { id: 963 } }
+//        "priority": "HIGH" }
+//      → 200 { ok: true, workOrder: { id: 117194232 } }
+//      (la orden se crea con assignees=[{type:"USER",id:1440988}])
 //
 //   2) Adjuntar una foto/evidencia (repetir por cada archivo):
-//      PUT {SUPABASE_URL}/functions/v1/maintainx?op=attachment&workrequestId=963&filename=evidencia1.jpg
+//      PUT {SUPABASE_URL}/functions/v1/maintainx?op=attachment&orderId=117194232&filename=evidencia1.jpg
 //      Authorization: Bearer <access_token del usuario>
 //      Content-Type: image/jpeg        ← el tipo real del archivo
 //      body: bytes del archivo (binario)
 //      → 200 { ok: true, attachment: { filename: "evidencia1.jpg" } }
 //
 // Secrets:
-//   MAINTAINX_TOKEN  (obligatorio) — API key de MaintainX, en la app web:
+//   MAINTAINX_TOKEN     (obligatorio) — API key de MaintainX, en la app web:
 //     Settings → Integrations → API Keys (app.getmaintainx.com). La key es
 //     un JWT; se envía como "Authorization: Bearer <token>".
+//   MAINTAINX_ASSIGNEE_ID (opcional) — id de usuario al que se asignan las
+//     órdenes; por defecto 1440988 (usuario REST API de la operación).
 //   REQUIRE_AUTH = 'true' (default) → exige JWT de Supabase válido.
 //     Poner 'false' solo para pruebas locales sin app.
 // =====================================================================
@@ -44,6 +52,9 @@ const MAINTAINX_BASE = 'https://api.getmaintainx.com/v1';
 
 /** Roles que pueden crear órdenes de mantenimiento (capitán + operación/admin). */
 const ROLES_PERMITIDOS = ['capitan', 'operacion'];
+
+/** Asignatario por defecto: usuario de mantenimiento (Angel, REST API auth). */
+const ASSIGNEE_USER_ID_DEFAULT = 1440988;
 
 const LIMITE_CREATE_BYTES = 200_000; // cuerpo JSON
 const LIMITE_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10 MB por archivo
@@ -79,7 +90,10 @@ interface UsuarioVerificado {
   rol: string | null;
 }
 
-/** Valida el JWT de Supabase y devuelve el rol del perfil (o una Response de error). */
+/** Valida el JWT de Supabase y devuelve el rol del perfil (o una Response de error).
+ *  El perfil se consulta CON el JWT del usuario como header, para que RLS
+ *  (profiles_select: auth.uid() = id) devuelva su propia fila. Sin fila →
+ *  rol null → la llamada se rechaza (fail closed). */
 async function verificarUsuario(req: Request): Promise<UsuarioVerificado | Response> {
   const requireAuth = (Deno.env.get('REQUIRE_AUTH') ?? 'true').toLowerCase() !== 'false';
   if (!requireAuth) return { id: 'sin-auth', rol: 'operacion' };
@@ -90,27 +104,31 @@ async function verificarUsuario(req: Request): Promise<UsuarioVerificado | Respo
     return json({ ok: false, error: 'Falta Authorization: Bearer <JWT de Supabase>' }, 401);
   }
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    );
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error || !data.user) {
+    const url = Deno.env.get('SUPABASE_URL') ?? '';
+    const anon = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabase = createClient(url, anon, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data: userData, error } = await supabase.auth.getUser(token);
+    if (error || !userData.user) {
       return json({ ok: false, error: 'JWT inválido o expirado' }, 401);
     }
-    const { data: perfil } = await supabase
+    const { data: perfil, error: errPerfil } = await supabase
       .from('profiles')
       .select('rol')
-      .eq('id', data.user.id)
+      .eq('id', userData.user.id)
       .maybeSingle();
-    return { id: data.user.id, rol: perfil?.rol ?? null };
+    if (errPerfil || !perfil) {
+      return json({ ok: false, error: 'Perfil no encontrado para este usuario' }, 403);
+    }
+    return { id: userData.user.id, rol: perfil.rol ?? null };
   } catch {
     return json({ ok: false, error: 'No se pudo verificar el JWT' }, 500);
   }
 }
 
-/** POST /workrequests — crea la orden de trabajo. */
-async function crearWorkRequest(body: unknown, token: string): Promise<Response> {
+/** POST /workorders — crea la orden de trabajo asignada al usuario de mantenimiento. */
+async function crearWorkOrder(body: unknown, token: string): Promise<Response> {
   const b = body as Record<string, unknown>;
   const title = typeof b.title === 'string' ? b.title.trim() : '';
   if (!title) return json({ ok: false, error: 'El título es obligatorio' }, 400);
@@ -147,7 +165,11 @@ async function crearWorkRequest(body: unknown, token: string): Promise<Response>
     }
   }
 
-  const res = await fetch(`${MAINTAINX_BASE}/workrequests`, {
+  // Asignación: solo al usuario de mantenimiento configurado.
+  const asignado = Number(Deno.env.get('MAINTAINX_ASSIGNEE_ID') ?? ASSIGNEE_USER_ID_DEFAULT);
+  payload.assignees = [{ type: 'USER', id: Number.isInteger(asignado) ? asignado : ASSIGNEE_USER_ID_DEFAULT }];
+
+  const res = await fetch(`${MAINTAINX_BASE}/workorders`, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${token}`,
@@ -165,19 +187,19 @@ async function crearWorkRequest(body: unknown, token: string): Promise<Response>
   }
   const data = (text ? JSON.parse(text) : {}) as { id?: number };
   if (!data.id) return json({ ok: false, error: 'MaintainX no devolvió el id de la orden' }, 502);
-  return json({ ok: true, workrequest: { id: data.id } });
+  return json({ ok: true, workOrder: { id: data.id } });
 }
 
-/** PUT /workrequests/{id}/attachments/{filename} — adjunta un archivo binario. */
+/** PUT /workorders/{id}/attachments/{filename} — adjunta un archivo binario. */
 async function adjuntarArchivo(
   req: Request,
   params: URLSearchParams,
   token: string,
 ): Promise<Response> {
-  const id = Number(params.get('workrequestId'));
+  const id = Number(params.get('orderId'));
   const filename = params.get('filename') ?? '';
   if (!Number.isInteger(id) || id <= 0) {
-    return json({ ok: false, error: 'workrequestId debe ser un id entero positivo' }, 400);
+    return json({ ok: false, error: 'orderId debe ser un id entero positivo' }, 400);
   }
   if (!NOMBRE_ARCHIVO.test(filename)) {
     return json(
@@ -199,7 +221,7 @@ async function adjuntarArchivo(
 
   const contentType = req.headers.get('content-type') ?? 'application/octet-stream';
   const res = await fetch(
-    `${MAINTAINX_BASE}/workrequests/${id}/attachments/${encodeURIComponent(filename)}`,
+    `${MAINTAINX_BASE}/workorders/${id}/attachments/${encodeURIComponent(filename)}`,
     {
       method: 'PUT',
       headers: {
@@ -232,9 +254,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   const usuario = await verificarUsuario(req);
   if (usuario instanceof Response) return usuario;
-  if (usuario.rol && !ROLES_PERMITIDOS.includes(usuario.rol)) {
+  if (!usuario.rol || !ROLES_PERMITIDOS.includes(usuario.rol)) {
     return json(
-      { ok: false, error: `Tu rol (${usuario.rol}) no puede enviar órdenes de mantenimiento` },
+      { ok: false, error: `Tu rol (${usuario.rol ?? 'sin rol'}) no puede enviar órdenes de mantenimiento` },
       403,
     );
   }
@@ -260,7 +282,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       } catch {
         return json({ ok: false, error: 'El cuerpo debe ser JSON válido' }, 400);
       }
-      return await crearWorkRequest(body, token);
+      return await crearWorkOrder(body, token);
     }
     return json({ ok: false, error: `Operación desconocida: ${op}` }, 400);
   } catch (e) {

@@ -9,8 +9,10 @@ import { ds } from './index';
  * verifica la sesión del usuario (ver app/supabase/functions/maintainx/).
  * Solo funciona en modo 'supabase'; en modo demo local no hay backend.
  *
- * Flujo: 1) POST → crea la work request (título + descripción + prioridad),
- *        2) PUT por cada foto → attachments/evidenciaN.jpg (bytes comprimidos).
+ * Flujo: 1) POST → crea la WORK ORDER (título + descripción + prioridad)
+ *            asignada al usuario de mantenimiento (la edge function manda
+ *            assignees=[{type:"USER",id:...}]),
+ *        2) PUT por cada foto → /workorders/{id}/attachments/evidenciaN.jpg.
  */
 
 export type PrioridadMantenimiento = 'LOW' | 'MEDIUM' | 'HIGH';
@@ -25,7 +27,8 @@ export interface OrdenMantenimiento {
 }
 
 export interface ResultadoMantenimiento {
-  workrequestId: number;
+  /** Id de la work order creada en MaintainX. */
+  orderId: number;
   fotosSubidas: number;
   fotosFallidas: number;
 }
@@ -121,22 +124,22 @@ async function crearOrden(
   const data = (await res.json().catch(() => ({}))) as {
     ok?: boolean;
     error?: string;
-    workrequest?: { id?: number };
+    workOrder?: { id?: number };
   };
-  if (!res.ok || !data.ok || !data.workrequest?.id) {
+  if (!res.ok || !data.ok || !data.workOrder?.id) {
     throw new Error(data.error ?? `MaintainX respondió HTTP ${res.status}`);
   }
-  return data.workrequest.id;
+  return data.workOrder.id;
 }
 
 async function adjuntarFoto(
-  workrequestId: number,
+  orderId: number,
   blob: Blob,
   filename: string,
   token: string,
 ): Promise<void> {
   const q = new URLSearchParams({ op: 'attachment' });
-  q.set('workrequestId', String(workrequestId));
+  q.set('orderId', String(orderId));
   q.set('filename', filename);
   const res = await fetch(`${fnUrl()}?${q.toString()}`, {
     method: 'PUT',
@@ -162,9 +165,9 @@ export function motivoNoDisponible(): string {
 }
 
 /**
- * Crea la work request en MaintainX y adjunta las fotos (evidencia1.jpg,
- * evidencia2.jpg, …). Si una foto falla no se aborta el resto; se reporta
- * cuántas quedaron pendientes.
+ * Crea la work order en MaintainX (asignada al usuario de mantenimiento) y
+ * adjunta las fotos (evidencia1.jpg, evidencia2.jpg, …). Si una foto falla
+ * no se aborta el resto; se reporta cuántas quedaron pendientes.
  */
 export async function enviarOrdenMantenimiento(
   orden: OrdenMantenimiento,
@@ -174,7 +177,7 @@ export async function enviarOrdenMantenimiento(
   if (!mantenimientoDisponible()) throw new Error(motivoNoDisponible());
   const token = await tokenSesion();
 
-  const workrequestId = await crearOrden(orden, token);
+  const orderId = await crearOrden(orden, token);
 
   let fotosSubidas = 0;
   let fotosFallidas = 0;
@@ -182,7 +185,7 @@ export async function enviarOrdenMantenimiento(
   for (let i = 0; i < elegidas.length; i++) {
     try {
       const blob = await comprimirFoto(elegidas[i]);
-      await adjuntarFoto(workrequestId, blob, `evidencia${i + 1}.jpg`, token);
+      await adjuntarFoto(orderId, blob, `evidencia${i + 1}.jpg`, token);
       fotosSubidas++;
     } catch {
       fotosFallidas++;
@@ -190,5 +193,5 @@ export async function enviarOrdenMantenimiento(
     onFotos?.(fotosSubidas, elegidas.length);
   }
 
-  return { workrequestId, fotosSubidas, fotosFallidas };
+  return { orderId, fotosSubidas, fotosFallidas };
 }
