@@ -9,6 +9,7 @@ import type { ReactNode, SVGProps } from 'react';
 export type IconName =
   | 'bitacora'
   | 'reportar'
+  | 'mantenimiento'
   | 'editar'
   | 'mapa'
   | 'historial'
@@ -28,6 +29,7 @@ export type IconName =
   | 'sello'
   | 'diana'
   | 'descargar'
+  | 'camara'
   | 'salida';
 
 const ICONOS: Record<IconName, ReactNode> = {
@@ -43,6 +45,9 @@ const ICONOS: Record<IconName, ReactNode> = {
   ),
   editar: (
     <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+  ),
+  mantenimiento: (
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
   ),
   mapa: (
     <>
@@ -180,6 +185,12 @@ const ICONOS: Record<IconName, ReactNode> = {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <path d="m16 17 5-5-5-5" />
       <path d="M21 12H9" />
+    </>
+  ),
+  camara: (
+    <>
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
     </>
   ),
 };

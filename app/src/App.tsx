@@ -7,6 +7,7 @@ import Toasts from './components/layout/Toasts';
 import Login from './components/auth/Login';
 import BitacoraForm from './components/report/BitacoraForm';
 import ReportForm from './components/report/ReportForm';
+import MantenimientoForm from './components/report/MantenimientoForm';
 import Dashboard from './components/dashboard/Dashboard';
 import BoatDetail from './components/boat/BoatDetail';
 import History from './components/history/History';
@@ -50,6 +51,14 @@ function Shell() {
             element={
               <ProtectedRoute rol={['capitan', 'marinero']}>
                 <ReportForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mantenimiento"
+            element={
+              <ProtectedRoute rol="capitan">
+                <MantenimientoForm />
               </ProtectedRoute>
             }
           />
