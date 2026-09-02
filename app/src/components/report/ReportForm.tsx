@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
-import { useBarcos, useBitacoraDeHoy, useEstados, useMiBarco } from '../../hooks/useFleet';
+import {
+  useBarcos,
+  useBitacoraDeHoy,
+  useEstados,
+  useMiBarco,
+  useMiBitacoraHoy,
+} from '../../hooks/useFleet';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { ds } from '../../services';
 import { useUIStore } from '../../store/uiStore';
@@ -30,7 +36,11 @@ export default function ReportForm() {
   const { geo, getGeo } = useGeolocation();
 
   const miAsignacion = useMiBarco(session?.profile.id ?? null, session?.profile.rol ?? null);
-  const barcoId = miAsignacion?.barco_id ?? null;
+  const { data: miBitacoraHoy } = useMiBitacoraHoy(session?.profile.id ?? null);
+  // El barco del día del capitán es el que él eligió en su Check Bitácora;
+  // si aún no abrió el día, cae a la asignación de operaciones.
+  const barcoId =
+    (esCapitan && miBitacoraHoy?.barco_id) || miAsignacion?.barco_id || null;
   const barco = barcos.find((b) => b.id === barcoId);
 
   const { data: bitacora, isLoading: cargandoGate } = useBitacoraDeHoy(barcoId);
@@ -131,7 +141,7 @@ export default function ReportForm() {
   }
 
   // ---- Gate: sin bitácora del día no hay reporte ----
-  if (!miAsignacion) {
+  if (!barcoId) {
     return (
       <div className="report-page">
         <h1 className="con-icono">
@@ -142,11 +152,26 @@ export default function ReportForm() {
           <span className="gate-icono">
             <Icono nombre="brujula" size={36} />
           </span>
-          <p>
-            No tienes una embarcación asignada en tu tripulación.
-            <br />
-            Contacta a operaciones para que te asigne a tu barco.
-          </p>
+          {esCapitan ? (
+            <>
+              <p>
+                El primer paso del día es la <b>Check Bitácora</b>: ahí eliges tu barco y se abre
+                el día para tu tripulación.
+              </p>
+              <button className="btn-stamp" onClick={() => navigate('/bitacora')}>
+                <Icono nombre="bitacora" />
+                HACER CHECK BITÁCORA
+              </button>
+            </>
+          ) : (
+            <>
+              <p>
+                No tienes una embarcación asignada en tu tripulación.
+                <br />
+                Contacta a operaciones para que te asigne a tu barco.
+              </p>
+            </>
+          )}
         </div>
       </div>
     );

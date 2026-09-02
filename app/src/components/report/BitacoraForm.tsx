@@ -5,6 +5,8 @@ import { useAuth } from '../../hooks/useAuth';
 import {
   useBarcos,
   useBitacoraDeHoy,
+  useMiBarco,
+  useMiBitacoraHoy,
   usePerfiles,
   useRutas,
   useTripulacionDeBarco,
@@ -39,12 +41,22 @@ export default function BitacoraForm() {
   const [barcoId, setBarcoId] = useState('');
   const { crew } = useTripulacionDeBarco(barcoId || null);
 
-  // Auto-selección cuando hay un único barco.
+  // El capitán elige su barco al abrir la bitácora (una vez por día).
+  // Pre-seleccionamos el que ya abrió hoy; si no, el que le tiene asignado
+  // operaciones (corregible); si no, el único activo; si no, que lo elija.
+  const miAsignacion = useMiBarco(session?.profile.id ?? null, session?.profile.rol ?? null);
+  const { data: miBitacoraHoy } = useMiBitacoraHoy(session?.profile.id ?? null);
+
+  // Auto-selección cuando hay un único barco o el del capitán.
   useEffect(() => {
-    if (!barcoId && barcosElegibles.length === 1) {
-      setBarcoId(barcosElegibles[0].id);
-    }
-  }, [barcoId, barcosElegibles]);
+    if (barcoId) return;
+    const asignado = miAsignacion?.barco_id;
+    const hoy = miBitacoraHoy?.barco_id;
+    const enLista = (id?: string) => !!id && barcosElegibles.some((b) => b.id === id);
+    const inicial =
+      (enLista(hoy) && hoy) || (enLista(asignado) && asignado) || (barcosElegibles.length === 1 ? barcosElegibles[0].id : '');
+    setBarcoId(inicial);
+  }, [barcoId, miAsignacion, miBitacoraHoy, barcosElegibles]);
 
   const { data: bitacora, isLoading } = useBitacoraDeHoy(barcoId || null);
   const [editando, setEditando] = useState(false);
@@ -218,7 +230,9 @@ export default function BitacoraForm() {
               <label>Marineros a bordo</label>
               {marineros.length === 0 && (
                 <p className="muted">
-                  Operaciones aún no ha registrado tripulación para este barco.
+                  {barcoId
+                    ? 'Operaciones aún no ha registrado tripulación para este barco.'
+                    : 'Selecciona el barco para cargar su tripulación.'}
                 </p>
               )}
               <div className="grid-2" style={{ gap: 8 }}>

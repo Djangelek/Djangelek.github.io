@@ -37,6 +37,8 @@ export interface DataSource {
 
   // Bitácoras (Check Bitácora diaria)
   getBitacoraDeHoy(barcoId: string): Promise<Bitacora | null>;
+  /** Bitácora de HOY creada por un capitán (define el barco de su día). */
+  getBitacoraDeHoyDelCapitan(capitanId: string): Promise<Bitacora | null>;
   listBitacoras(rango?: RangoFechas): Promise<Bitacora[]>;
   createBitacora(input: NewBitacora): Promise<Bitacora>;
   updateBitacora(id: string, input: Partial<NewBitacora>): Promise<Bitacora>;

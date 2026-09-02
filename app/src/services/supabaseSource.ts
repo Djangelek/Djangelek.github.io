@@ -124,6 +124,26 @@ export class SupabaseSource implements DataSource {
     return bitacora;
   }
 
+  async getBitacoraDeHoyDelCapitan(capitanId: string): Promise<Bitacora | null> {
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+    const { data, error } = await this.client
+      .from('bitacoras')
+      .select('*')
+      .eq('capitan_id', capitanId)
+      .eq('fecha', hoy)
+      .maybeSingle();
+    this.raise(error);
+    if (!data) return null;
+    const bitacora = data as Bitacora;
+    const { data: trip, error: errTrip } = await this.client
+      .from('bitacora_tripulantes')
+      .select('perfil_id')
+      .eq('bitacora_id', bitacora.id);
+    this.raise(errTrip);
+    bitacora.marineros = (trip ?? []).map((t) => t.perfil_id);
+    return bitacora;
+  }
+
   async listBitacoras(rango?: RangoFechas): Promise<Bitacora[]> {
     let q = this.client.from('bitacoras').select('*').order('fecha', { ascending: false });
     if (rango) {

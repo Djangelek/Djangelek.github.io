@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useBarcos, useMiBarco } from '../../hooks/useFleet';
+import { useBarcos, useMiBarco, useMiBitacoraHoy } from '../../hooks/useFleet';
 import {
   enviarOrdenMantenimiento,
   mantenimientoDisponible,
@@ -28,6 +28,7 @@ export default function MantenimientoForm() {
   const rolLabel = esCapitan ? 'capitán' : session?.profile.rol ?? '';
 
   const miAsignacion = useMiBarco(session?.profile.id ?? null, session?.profile.rol ?? null);
+  const { data: miBitacoraHoy } = useMiBitacoraHoy(session?.profile.id ?? null);
   const barcosElegibles = useMemo(() => barcos.filter((b) => b.activo), [barcos]);
 
   const [barcoId, setBarcoId] = useState('');
@@ -44,16 +45,19 @@ export default function MantenimientoForm() {
 
   const nombreBarco = barcos.find((b) => b.id === barcoId)?.nombre ?? '…';
 
-  // Barco por defecto: el asignado al capitán; si no, el único activo.
+  // Barco por defecto: el del día del capitán (su bitácora de hoy); si no,
+  // el asignado por operaciones; si no, el único activo.
   useEffect(() => {
-    if (!barcoId) {
-      const inicial =
-        (miAsignacion && barcosElegibles.some((b) => b.id === miAsignacion.barco_id)
-          ? miAsignacion.barco_id
-          : '') || (barcosElegibles.length === 1 ? barcosElegibles[0].id : '');
-      setBarcoId(inicial);
-    }
-  }, [barcoId, miAsignacion, barcosElegibles]);
+    if (barcoId) return;
+    const enLista = (id?: string) => !!id && barcosElegibles.some((b) => b.id === id);
+    const hoy = miBitacoraHoy?.barco_id;
+    const asignado = miAsignacion?.barco_id;
+    const inicial =
+      (enLista(hoy) && hoy) ||
+      (enLista(asignado) && asignado) ||
+      (barcosElegibles.length === 1 ? barcosElegibles[0].id : '');
+    setBarcoId(inicial);
+  }, [barcoId, miAsignacion, miBitacoraHoy, barcosElegibles]);
 
   // Limpieza de las vistas previas al desmontar (ref para ver las fotos actuales).
   const fotosRef = useRef(fotos);
