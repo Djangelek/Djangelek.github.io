@@ -2,28 +2,28 @@
 name: Colombia Navega
 description: "El Manifiesto — bitácora náutica sobre papel de manifiesto e tinta índigo para controlar la flota en vivo."
 colors:
-  papel: "#f6f3ea"
-  papel-alto: "#fbf9f1"
-  papel-hondo: "#ece6d4"
-  tinta: "#1c2b4a"
-  tinta-suave: "#4a5874"
-  tinta-tenue: "#5f6c88"
-  sello: "#c8452c"
-  etiqueta: "#0e7c7b"
-  mar: "#2e6f9e"
-  puerto: "#2f7d4f"
-  ambar: "#7c4f0b"
-  linea: "rgba(28, 43, 74, 0.16)"
-  linea-fuerte: "rgba(28, 43, 74, 0.38)"
-  ok-fondo: "#e3efdf"
-  ok-texto: "#1f5c3d"
-  err-fondo: "#f8e2db"
-  err-texto: "#8c2f1d"
-  info-fondo: "#dfe9f2"
-  info-texto: "#1f4e72"
-  aviso-fondo: "#f6ead2"
-  aviso-texto: "#7a4b0e"
-  foco: "#0e7c7b"
+  papel: "#f7f6f0"
+  papel-alto: "#fdfcf8"
+  papel-hondo: "#eeeadd"
+  tinta: "#0f1726"
+  tinta-suave: "#37435d"
+  tinta-tenue: "#4e5b78"
+  sello: "#c2401f"
+  etiqueta: "#00716c"
+  mar: "#185a9c"
+  puerto: "#1e6b40"
+  ambar: "#7a4c09"
+  linea: "rgba(15, 23, 38, 0.16)"
+  linea-fuerte: "rgba(15, 23, 38, 0.4)"
+  ok-fondo: "#ddf0dd"
+  ok-texto: "#0f4d26"
+  err-fondo: "#fbe2d8"
+  err-texto: "#8a2a10"
+  info-fondo: "#d9eafa"
+  info-texto: "#0e4472"
+  aviso-fondo: "#f7e9cc"
+  aviso-texto: "#6d4506"
+  foco: "#00716c"
 typography:
   display:
     fontFamily: "'Archivo Black', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif"
@@ -103,7 +103,7 @@ components:
 
 **Creative North Star: "El Manifiesto"**
 
-La interfaz entera se trata como el **manifiesto de embarque** de una flota náutica: un papel de manifiesto tibio que cada barco debe llenar y sellar cada mañana. No hay tarjetas SaaS; hay **hojas** de papel (#f6f3ea) escritas con **tinta índigo** (#1c2b4a) y selladas con un **sello rojo** (#c8452c). Cada dato es una entrada del libro del día, en monoespaciado tabular, y cada quiebre de sección es el borde **perforado de talonario** (raya discontinua de 2px). Se rechaza explícitamente el dashboard genérico de sidebar y tarjetas: el mundo visual es un cuaderno de a bordo.
+La interfaz entera se trata como el **manifiesto de embarque** de una flota náutica: un papel de manifiesto tibio que cada barco debe llenar y sellar cada mañana. No hay tarjetas SaaS; hay **hojas** de papel (#f7f6f0) escritas con **tinta índigo** (#0f1726) y selladas con un **sello rojo** (#c2401f). Cada dato es una entrada del libro del día, en monoespaciado tabular, y cada quiebre de sección es el borde **perforado de talonario** (raya discontinua de 2px). Se rechaza explícitamente el dashboard genérico de sidebar y tarjetas: el mundo visual es un cuaderno de a bordo.
 
 La tinta índigo es la voz (texto y botón primario); el papel tibio es siempre el suelo; el sello rojo y las etiquetas de estado son los únicos acentos que entran en color. El tema nocturno **"tinta"** invierte el papel por tinta y la tinta por papel, para mar abierto de noche. Los datos viven en `font-variant-numeric: tabular-nums` para que columnas de cifras alineen como un libro de cuentas.
 
@@ -118,46 +118,46 @@ La tinta índigo es la voz (texto y botón primario); el papel tibio es siempre 
 
 ## Colors
 
-La paleta es **papel e tinta** con un sello rojo y etiquetas de estado por color; todo color sólido es bajo en saturación y pensado para leerse bajo sol caribeño.
+La paleta es **papel e tinta** con un sello rojo y etiquetas de estado por color, **recalibrada en clave HMI**: máximo contraste para leer bajo sol caribeño (tema claro de día) y señales luminosas sobre azul profundo para poca luz (tema nocturno).
 
 ### Primary
 
-- **Tinta índigo** (#1c2b4a): la tinta. Texto por defecto, botón primario (`.btn-stamp`), pestaña activa y superficie "rellena". Es el color de marca que se lee en todas partes.
+- **Tinta índigo** (#0f1726): la tinta. Texto por defecto, botón primario (`.btn-stamp`), pestaña activa y superficie "rellena". Es el color de marca que se lee en todas partes.
 
 ### Secondary
 
-- **Etiqueta teal** (#0e7c7b): el acento interactivo. Enlaces (`.btn-link`), color de selección, checkboxes/radios (`accent-color`), foco (`--foco`), valor de combustible, horas de bitácora y botones demo. Es el color de "esto responde".
+- **Etiqueta teal** (#00716c): el acento interactivo. Enlaces (`.btn-link`), color de selección, checkboxes/radios (`accent-color`), foco (`--foco`), valor de combustible, horas de bitácora y botones demo. Es el color de "esto responde".
 
 ### Tertiary
 
-- **Sello rojo** (#c8452c): el sello. Alertas, botones de peligro (`.btn-stamp.peligro`, `.btn-mini.danger`), estados de error y el sello "Pendiente". Su rareza es el punto: aparece cuando algo exige atención o se sella.
+- **Sello rojo** (#c2401f): el sello. Alertas, botones de peligro (`.btn-stamp.peligro`, `.btn-mini.danger`), estados de error y el sello "Pendiente". Su rareza es el punto: aparece cuando algo exige atención o se sella.
 
 ### Neutral
 
-- **Papel** (#f6f3ea): fondo de página y de inputs; el suelo tibio del sistema.
-- **Papel alto** (#fbf9f1): superficies elevadas — hojas, cabeceras, tarjetas, barra de envío.
-- **Papel hondo** (#ece6d4): papel hundido — hover de chips/botones, fondo del mapa, esqueleto de carga.
-- **Tinta suave** (#4a5874): texto secundario y labels.
-- **Tinta tenue** (#5f6c88): texto terciario/atenuado (`.muted`, placeholders).
-- **Línea** (rgba(28,43,74,0.16)): bordes y separadores suaves.
-- **Línea fuerte** (rgba(28,43,74,0.38)): bordes de inputs, perforado, doble regla.
+- **Papel** (#f7f6f0): fondo de página y de inputs; el suelo tibio del sistema.
+- **Papel alto** (#fdfcf8): superficies elevadas — hojas, cabeceras, tarjetas, barra de envío.
+- **Papel hondo** (#eeeadd): papel hundido — hover de chips/botones, fondo del mapa, esqueleto de carga.
+- **Tinta suave** (#37435d): texto secundario y labels.
+- **Tinta tenue** (#4e5b78): texto terciario/atenuado (`.muted`, placeholders).
+- **Línea** (rgba(15,23,38,0.16)): bordes y separadores suaves.
+- **Línea fuerte** (rgba(15,23,38,0.4)): bordes de inputs, perforado, doble regla.
 
 ### Estado / Señal
 
-- **Mar** (#2e6f9e): info / GPS obteniendo posición / rol capitán / filtro demo.
-- **Puerto** (#2f7d4f): éxito / rol operación / exportar / `.sello.ok` / botón de éxito.
-- **Ámbar** (#7c4f0b): aviso / rol ventas / estado "recogida de pasajeros" / `.sello.alerta`. Oscurecido respecto al ámbar decorativo para cumplir AA (≥4.5:1) como color de texto sobre papel; en el tema `tinta` se usa #e8b04c.
+- **Mar** (#185a9c): info / GPS obteniendo posición / rol capitán / filtro demo.
+- **Puerto** (#1e6b40): éxito / rol operación / exportar / `.sello.ok` / botón de éxito.
+- **Ámbar** (#7a4c09): aviso / rol ventas / estado "recogida de pasajeros" / `.sello.alerta`. Oscurecido para AA (≥4.5:1) como texto sobre papel.
 - Pares de fondo/texto para los cuatro tonos de mensaje: `--ok-*` (verde), `--err-*` (rojo), `--info-*` (azul), `--aviso-*` (ámbar), aplicados a toasts, status y chips GPS.
 
 ### Tema nocturno "tinta"
 
-`[data-theme='tinta']` re-mapea los mismos tokens: papel→#131c2e, papel-alto→#1b2740, papel-hondo→#0e1626; la tinta se vuelve papel claro (#f2eddf) y los acentos se aclaran (sello→#ef6a4c, etiqueta→#4fc3c0, mar→#6fb1e8, puerto→#6fce94, ámbar→#e8b04c). Las sombras pasan de tinta a negro profundo. **Siempre** se referencia `var(--…)`; nunca se hardcodea un valor de un solo tema.
+`[data-theme='tinta']` re-mapea los mismos tokens al modo HMI de baja luz: papel→#0a101d (azul profundo), papel-alto→#111a2e, papel-hondo→#05090f; la tinta se vuelve claro (#eef3fa) y los acentos se vuelven señales luminosas (sello→#ff6a49, etiqueta→#2dd4cb, mar→#5db4ff, puerto→#3ed17f, ámbar→#ffc14d). Las sombras pasan de tinta a negro profundo. **Siempre** se referencia `var(--…)`; nunca se hardcodea un valor de un solo tema.
 
 ### Named Rules
 
 **The Paper-Ground Rule.** Todo se asienta sobre `papel` / `papel-alto` / `papel-hondo`. No existe blanco puro ni negro puro en ninguna superficie; el papel siempre tiene tibieza.
 
-**The Stamp Rarity Rule.** El sello rojo (#c8452c) solo entra como sello, alerta o acción destructiva. Nunca inunda una superficie; su escasez es el mensaje.
+**The Stamp Rarity Rule.** El sello rojo (#c2401f) solo entra como sello, alerta o acción destructiva. Nunca inunda una superficie; su escasez es el mensaje.
 
 ## Typography
 

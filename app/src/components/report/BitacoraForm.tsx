@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  useAsignaciones,
   useBarcos,
   useBitacoraDeHoy,
   usePerfiles,
@@ -31,24 +30,16 @@ export default function BitacoraForm() {
   const { data: barcos = [] } = useBarcos();
   const { data: rutas = [] } = useRutas();
   const { data: perfiles = [] } = usePerfiles();
-  const { data: asignaciones = [] } = useAsignaciones();
 
-  // Barcos elegibles: el capitán solo ve SUS barcos; operación, todos.
-  const barcosElegibles = useMemo(() => {
-    if (esCapitan && session) {
-      const mios = asignaciones
-        .filter((a) => a.perfil_id === session.profile.id && a.es_capitan)
-        .map((a) => a.barco_id);
-      return barcos.filter((b) => mios.includes(b.id));
-    }
-    return barcos.filter((b) => b.activo);
-  }, [esCapitan, session, asignaciones, barcos]);
+  // Al iniciar el día el capitán puede elegir CUALQUIER barco activo
+  // (la BD lo permite: bitacoras_insert para cualquier capitán).
+  const barcosElegibles = useMemo(() => barcos.filter((b) => b.activo), [barcos]);
 
-  // Barco: el capitán usa sus barcos asignados; operación elige cualquiera.
+  // Barco: auto-seleccionado cuando hay uno solo; si no, se elige.
   const [barcoId, setBarcoId] = useState('');
   const { crew } = useTripulacionDeBarco(barcoId || null);
 
-  // Auto-selección cuando hay un único barco (caso típico del capitán).
+  // Auto-selección cuando hay un único barco.
   useEffect(() => {
     if (!barcoId && barcosElegibles.length === 1) {
       setBarcoId(barcosElegibles[0].id);
@@ -141,6 +132,10 @@ export default function BitacoraForm() {
 
       <div className="hoja">
         <div className="campo">
+          <div className="fila-dato" style={{ justifyContent: 'center', marginBottom: 10 }}>
+            <span className="rotulo">Fecha</span>
+            <span className="dato">{hoy}</span>
+          </div>
           <label htmlFor="bitacora-barco">Barco</label>
           <select id="bitacora-barco" value={barcoId} onChange={(e) => setBarcoId(e.target.value)}>
             <option value="">Selecciona barco…</option>
@@ -150,10 +145,6 @@ export default function BitacoraForm() {
               </option>
             ))}
           </select>
-          <div className="fila-dato" style={{ marginTop: 8, justifyContent: 'center' }}>
-            <span className="rotulo">Fecha</span>
-            <span className="dato">{hoy}</span>
-          </div>
         </div>
 
         {isLoading && <div className="esqueleto" style={{ marginTop: 14 }} />}

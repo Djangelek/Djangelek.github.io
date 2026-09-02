@@ -302,16 +302,14 @@ create policy "asignaciones_delete" on public.asignaciones
 create policy "bitacoras_select" on public.bitacoras
   for select using (auth.role() = 'authenticated');
 
+--  - insertar: cualquier capitán puede abrir el día de cualquier barco
+--    (o operación); los reportes siguen limitados a la tripulación asignada
 create policy "bitacoras_insert" on public.bitacoras
   for insert with check (
     public.rol_actual() = 'operacion'
     or (
       public.rol_actual() = 'capitan'
       and bitacoras.capitan_id = auth.uid()
-      and exists (
-        select 1 from public.asignaciones a
-        where a.perfil_id = auth.uid() and a.barco_id = bitacoras.barco_id and a.es_capitan
-      )
     )
   );
 
