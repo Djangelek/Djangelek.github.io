@@ -29,9 +29,10 @@ export default function Header() {
   // Operación: todo. Ventas: solo lectura.
   const esTripulacion = rol === 'capitan' || rol === 'marinero';
   const esOperacion = rol === 'operacion';
-  // Si el nombre es el rol en crudo ("capitan"), solo se muestra la insignia
-  // para no repetir "Capitán" dos veces.
-  const esNombreRol = session.profile.nombre.toLowerCase() === rol;
+  // Si el nombre repite el rol (ej. "capitan1"), solo se muestra la insignia
+  // azul para no duplicar "Capitán/Capitán 1" en el header.
+  const nombreMin = session.profile.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const esNombreRol = nombreMin === rol || new RegExp(`^${rol}\\d*$`).test(nombreMin);
 
   const claseTab = ({ isActive }: { isActive: boolean }) =>
     `tab-btn${isActive ? ' active' : ''}`;

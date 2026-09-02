@@ -387,6 +387,20 @@ create policy "reportes_insert" on public.reportes
           where b.barco_id = reportes.barco_id and b.fecha = public.hoy_local()
         )
       )
+      or (
+        public.rol_actual() in ('capitan','marinero')
+        and exists (
+          select 1 from public.bitacoras b
+          where b.barco_id = reportes.barco_id
+            and b.fecha = public.hoy_local()
+            and ( b.capitan_id = auth.uid()
+                  or exists (
+                    select 1 from public.bitacora_tripulantes tt
+                    where tt.bitacora_id = b.id and tt.perfil_id = auth.uid()
+                  )
+                )
+        )
+      )
     )
   );
 
@@ -396,13 +410,21 @@ create policy "reportes_update" on public.reportes
     or (
       reportes.operador_id = auth.uid()
       and public.rol_actual() in ('capitan','marinero')
-      and exists (
-        select 1 from public.asignaciones a
-        where a.perfil_id = auth.uid() and a.barco_id = reportes.barco_id
-      )
-      and exists (
-        select 1 from public.bitacoras b
-        where b.barco_id = reportes.barco_id and b.fecha = public.hoy_local()
+      and (
+        exists (
+          select 1 from public.asignaciones a
+          where a.perfil_id = auth.uid() and a.barco_id = reportes.barco_id
+        )
+        or exists (
+          select 1 from public.bitacoras b
+          where b.barco_id = reportes.barco_id and b.fecha = public.hoy_local()
+            and ( b.capitan_id = auth.uid()
+                  or exists (
+                    select 1 from public.bitacora_tripulantes tt
+                    where tt.bitacora_id = b.id and tt.perfil_id = auth.uid()
+                  )
+                )
+        )
       )
     )
   );

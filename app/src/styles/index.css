@@ -1601,6 +1601,15 @@ input[type='radio'] {
   .site-header {
     padding: 10px 12px;
   }
+  /* Marca centrada arriba y barra de usuario debajo (insignia izq. / botones der.) */
+  .brand {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  .user-box {
+    width: 100%;
+    justify-content: space-between;
+  }
   .brand img {
     height: 40px;
   }
