@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ds, joinFleet } from '../services';
+import { hoyLocalISO } from '../utils/format';
 import type { Bitacora, FleetEntry } from '../types';
 
 export function useBarcos() {
@@ -42,10 +43,13 @@ export function useAsignaciones() {
   });
 }
 
-/** Bitácora de HOY de un barco (null → el barco no ha abierto el día). */
+/** Bitácora de HOY de un barco (null → el barco no ha abierto el día).
+ *  El día va en la clave de la consulta, así que al cambiar la fecha la
+ *  bitácora de ayer deja de tenerse en cuenta (reinicio diario). */
 export function useBitacoraDeHoy(barcoId: string | null) {
+  const hoy = hoyLocalISO();
   return useQuery({
-    queryKey: ['bitacora', 'hoy', barcoId],
+    queryKey: ['bitacora', 'hoy', hoy, barcoId],
     queryFn: () => (barcoId ? ds.getBitacoraDeHoy(barcoId) : Promise.resolve(null)),
     enabled: !!barcoId,
     refetchInterval: 15_000,
@@ -54,8 +58,9 @@ export function useBitacoraDeHoy(barcoId: string | null) {
 
 /** Bitácora de HOY que abrió un capitán (define el barco de su día). */
 export function useMiBitacoraHoy(perfilId: string | null) {
+  const hoy = hoyLocalISO();
   return useQuery({
-    queryKey: ['bitacora', 'capitan', 'hoy', perfilId],
+    queryKey: ['bitacora', 'capitan', 'hoy', hoy, perfilId],
     queryFn: () => (perfilId ? ds.getBitacoraDeHoyDelCapitan(perfilId) : Promise.resolve(null)),
     enabled: !!perfilId,
     refetchInterval: 15_000,
@@ -64,8 +69,9 @@ export function useMiBitacoraHoy(perfilId: string | null) {
 
 /** Bitácora de HOY donde el usuario participa (capitán que la abrió o marinero a bordo). */
 export function useMiBitacoraTripulante(perfilId: string | null) {
+  const hoy = hoyLocalISO();
   return useQuery({
-    queryKey: ['bitacora', 'tripulante', 'hoy', perfilId],
+    queryKey: ['bitacora', 'tripulante', 'hoy', hoy, perfilId],
     queryFn: () => (perfilId ? ds.getBitacoraDeHoyDelTripulante(perfilId) : Promise.resolve(null)),
     enabled: !!perfilId,
     refetchInterval: 15_000,

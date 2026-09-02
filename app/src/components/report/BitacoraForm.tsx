@@ -13,7 +13,8 @@ import {
 import { ds } from '../../services';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { useUIStore } from '../../store/uiStore';
-import { formatFechaDia, hoyLocalISO } from '../../utils/format';
+import { useHoy } from '../../hooks/useHoy';
+import { formatFechaDia } from '../../utils/format';
 import { Icono } from '../ui/Iconos';
 import type { Bitacora } from '../../types';
 
@@ -138,7 +139,20 @@ export default function BitacoraForm() {
     setEditando(true);
   }
 
-  const hoy = formatFechaDia(hoyLocalISO());
+  const hoyStr = useHoy();
+  const hoy = formatFechaDia(hoyStr);
+
+  // Reinicio diario: al cambiar la fecha, la bitácora vuelve a estar vacía
+  // y el capitán empieza un día nuevo (nuevo barco, nuevos marineros).
+  useEffect(() => {
+    setBarcoId('');
+    setRutaId('');
+    setPasajeros('0');
+    setCombustible(100);
+    setMarinerosSel([]);
+    setEditando(false);
+    setSellada(false);
+  }, [hoyStr]);
 
   return (
     <div className="report-page">
