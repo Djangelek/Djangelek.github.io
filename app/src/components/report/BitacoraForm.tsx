@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
@@ -142,9 +142,15 @@ export default function BitacoraForm() {
   const hoyStr = useHoy();
   const hoy = formatFechaDia(hoyStr);
 
-  // Reinicio diario: al cambiar la fecha, la bitácora vuelve a estar vacía
-  // y el capitán empieza un día nuevo (nuevo barco, nuevos marineros).
+  // Reinicio diario: al cambiar la fecha, la bitácora vuelve a estar vacía.
+  // Solo corre cuando la fecha CAMBIA (no en el primer render, para no borrar
+  // el barco que se auto-preseleccionó).
+  const primerRender = useRef(true);
   useEffect(() => {
+    if (primerRender.current) {
+      primerRender.current = false;
+      return;
+    }
     setBarcoId('');
     setRutaId('');
     setPasajeros('0');
