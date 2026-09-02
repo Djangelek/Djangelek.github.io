@@ -223,9 +223,9 @@ export default function Dashboard() {
         <div className="mapa-wrap">
           <MapContainer center={[10.4, -75.53]} zoom={11} className="mapa">
             <TileLayer
-              url="https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
-              maxZoom={19}
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+              attribution="&copy; Esri, HERE, Garmin, OpenStreetMap contributors"
+              maxZoom={16}
             />
             <TileLayer
               url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
